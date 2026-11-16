@@ -11,7 +11,7 @@
 |---|---|---|
 | 引擎 | Cocos Creator 3.8.8 | T001 实测回填（`C:\ProgramData\cocos\editors\Creator\3.8.8\CocosCreator.exe`） |
 | 语言 | TypeScript `strict` | 宪法 C-1 |
-| 核心逻辑单测 | Vitest（或 `node:test` + `tsx`） | 由 T103 定稿，需验证与 Cocos `tsconfig` 兼容 |
+| 核心逻辑单测 | **Node 内置 `node:test` + `node:assert/strict`，Cocos 内置 tsc 预编译** | T103 定稿：**零 npm 依赖**（不装 Vitest/tsx，不动 Cocos 管理的 `package.json`）。`build/scripts/test-core.ps1` 用 `C:\ProgramData\cocos\editors\Creator\3.8.8\...\tsc.js` 以 `--strict` 编译 `assets/core/*.ts` + `tests/core/*.test.ts` 到 `temp/test-build/`（已忽略），再 `node --test` 跑编译产物。测试源码在 `tests/core/`（入库）。兼容 Cocos：用其自带 tsc、不改 Cocos 配置 |
 | 构建 | 编辑器构建面板 / 命令行构建脚本为主 | 由 T005 沉淀到 `build/`；构建参数无法由 MCP 配置，见 §4 |
 | 版本控制 | Git | 构建产物、`library/`、`temp/`、`local/` 不入库 |
 | 验证工具 | 浏览器 / 微信开发者工具 / Windows exe | 三端各自留验证记录；Web 预览已可由 MCP 启动 |
@@ -155,3 +155,4 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-16 | **宪法 v0.2 变更**：微信小游戏因版号/类目/合规成本延后真机/上架验证，不计入 M0 阻塞（构建产物仍在 M0 生成）。级联更新：宪法 §1/C-7/§8、spec AC-6/§6、plan 状态与 R-1、tasks T003 转延后 / T006 收尾 |
 | 2026-11-16 | T101 完成并勾选：Q-1 已确认关闭；`plan.md` §5 映射同步——补 FR-8~FR-17 共 10 条 core 规则映射、头部关联扩到 FR-1~17/AC-1~14、T109 验收范围同步 |
 | 2026-11-16 | T102 完成并勾选：`assets/core/` 新增 7 个纯 TS 类型模块（GameState/GameInput/Snapshot/SaveData/契约签名），无引擎/平台 import；Cocos tsc `--strict` 检查 exit=0、CJS 编译后 node 可引用；根 `tsconfig.json` `strict:false`→`true` 对齐宪法 C-1；§6 R-2 更新为部分验证、风险降低待 T106 打包验证 |
+| 2026-11-16 | T103 完成并勾选：单测框架定稿为零依赖 `node:test` + Cocos 内置 tsc 预编译（回填 §1）；新增 `build/scripts/test-core.ps1` 可重复命令与 `tests/core/init.test.ts` 首个用例（3 用例全过） |
