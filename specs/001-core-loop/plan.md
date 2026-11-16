@@ -1,7 +1,7 @@
 # Plan 001：核心循环
 
 > 对应 CodeBuddy Plan 模式产物。技术细节只写在这里，不写进 `spec.md`。
-> 状态：Draft —— T006 复盘已完成（风险结论见 §6），但 **M0 未全部完成**：T003 微信小游戏横屏修复与真机验证按用户指示留待项目最后做。按宪法 C-7 + `spec.md` AC-6「M0 全部完成且状态为 Confirmed 才进 M1」，状态保持 Draft，不改为 Confirmed。待 T003 完成后再由 T006 收尾改 Confirmed。
+> 状态：Confirmed —— T006 复盘完成（风险结论见 §6），M0 阻塞项按**宪法 v0.2** 判据（Web + Windows 两端打通）已全部完成。微信小游戏 T003 因版号/合规成本按用户指示延后，不计入 M0 阻塞（构建产物已在 M0 生成）。据宪法 C-7 + `spec.md` AC-6（v0.2 口径），状态由 Draft 改为 Confirmed，解锁 M1。
 
 关联：`spec.md` FR-1 ~ FR-7 / AC-1 ~ AC-6
 
@@ -70,7 +70,7 @@ M0 实测（2026-11-09，通过 cocos-mcp-server）：
 | 端 | 构建方式 | 验证方式 | 命令 |
 |---|---|---|---|
 | Web / H5 | 编辑器 Build 面板：目标 `web-desktop`，初始场景 `StartMenu`，场景列表含 `StartMenu` + `Placeholder`，输出 `build/web-desktop`（MCP 无自动构建 API，T005 沉淀脚本） | 本地静态服务器 + Edge（`playwright-cli --browser=msedge`） | `C:\Python313\python.exe -m http.server 8123 --directory D:\dev\rougeCard\rougeCard\build\web-desktop`<br>`playwright-cli open --browser=msedge http://127.0.0.1:8123/`<br>`playwright-cli console` |
-| 微信小游戏 | 编辑器 Build 面板 `wechatgame` 任务（输出 `build/wechatgame`）；AppID 占位 `wx6ac3f5090a6b99c5`（T003 产物核验）。**待修**：`game.json` 竖屏 `deviceOrientation: portrait`（Q-2 要求横屏）；`program.json` 尚未配置微信开发者工具路径。**T003 按用户指示暂缓**，未做模拟器/真机验证（构建产物已成功生成） | 微信开发者工具导入 `build/wechatgame` + 真机点 START 验证（待 T003 解除暂缓后执行） | 构建：编辑器 Build 面板点 `wechatgame` 的 Build；导入：微信开发者工具打开 `build/wechatgame` 目录 |
+| 微信小游戏 | 编辑器 Build 面板 `wechatgame` 任务（输出 `build/wechatgame`）；AppID 占位 `wx6ac3f5090a6b99c5`（T003 产物核验）。**待修**：`game.json` 竖屏 `deviceOrientation: portrait`（Q-2 要求横屏）；`program.json` 尚未配置微信开发者工具路径。**T003 按宪法 v0.2 延后**（版号/合规成本），不计入 M0 阻塞；构建产物已生成 | 微信开发者工具导入 `build/wechatgame` + 真机点 START 验证（延后至发行阶段执行） | 构建：编辑器 Build 面板点 `wechatgame` 的 Build；导入：微信开发者工具打开 `build/wechatgame` 目录 |
 | Windows | 编辑器 Build 面板 `windows` 任务（target `x64`，`nativeCodeBundleMode: wasm`，输出 `build/windows`）；MCP 无法配置构建参数（见 R-6）。**须把该任务启动场景设为 `StartMenu`（uuid `207c2746-...`），默认错配成空场景 `Placeholder`**（用户 2026-11-16 已改好） | **用入库脚本启动**：`powershell -File build\scripts\run-windows.ps1`（自动建 data 链接后启动 exe）；仅建链接不启动加 `-NoLaunch`。原理：exe 只读 exe 同级 `data`（junction → `build/windows/data`），不读 cmake `copy_resource` 的 `proj/Release/Resources`（陈旧副本，`launchScene` 仍为 Placeholder）。真实桌面点 START 验证跳转 | 编译 `cmake.exe --build build\windows\proj --config Release --parallel 8`；启动 `powershell -NoProfile -ExecutionPolicy Bypass -File build\scripts\run-windows.ps1` |
 
 ### 干净检出可重复构建流程（T005，2026-11-16）
@@ -105,20 +105,20 @@ T002 Web 构建产物实测补充（2026-11-09）：
 
 | 编号 | 风险 | 验证时机 | 结论 |
 |---|---|---|---|
-| R-1 | 三端构建链路任一跑不通，架构假设不成立 | M0（T002–T004） | **2/3 通过**：Web 实包构建 + 浏览器运行 + 输入与场景切换通过（T002）；Windows 构建 + exe 启动 + StartMenu 显示与点击跳转通过（T004，用户真实桌面验收）。微信小游戏构建产物已成功生成，但**横屏修复与真机验证待 T003（用户指示项目最后做）**。R-1 未完全通过 → 按下方约束不得进入 M1，宪法 C-2/C-3 未被证伪、无需修订 |
+| R-1 | 构建链路跑不通，架构假设不成立 | M0（T002–T004） | **通过（宪法 v0.2 口径）**：M0 阻塞判据为 Web + Windows 两端——Web 实包构建 + 浏览器运行 + 输入与场景切换通过（T002）；Windows 构建 + exe 启动 + StartMenu 显示与点击跳转通过（T004，用户真实桌面验收）。微信小游戏构建产物已生成（验证单一工程多端打包可行），真机/上架验证因版号合规延后（T003，不计入 M0 阻塞）。宪法 C-2/C-3 未被证伪 |
 | R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001） | **未实际验证**：T001 只建立 `assets/core/` 空目录（宪法 §3 分层），尚无 `core/` 代码参与编译，无法判定与 Cocos tsconfig/打包器的兼容性。待 M1 T102 写入首批纯 TS 状态机后，由该 task 的编译/单测实测回填；风险本身仍开放 |
 | R-3 | 微信小游戏首包体积与分包策略 | M2 | `[待回填]` |
 | R-4 | Windows 包与 Steamworks SDK 的集成方式 | M3 | `[待回填]` |
 | R-5 | task 粒度过大，无法独立验证导致 spec 流程失效 | 全程 | 约束：单 task 估时 ≤ 半天 |
 | R-6 | MCP 能否替代三端构建与预览 | M0（实测） | 构建配置仍需编辑器 UI / 命令行；**预览已通过本地改插件打通**（`preview:open-terminal` + `query-preview-url`），重启后实测 200。MCP 稳定支持场景搭建、资源刷新、静态校验、日志读取、启动预览；无 stop 能力 |
 
-R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。
+R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**本次 R-1 已通过（v0.2 口径），已解锁 M1**；微信小游戏端风险转由发行阶段处理，不在此阻塞。
 
 ## 7. 里程碑
 
 | 里程碑 | 目标 | 任务范围 |
 |---|---|---|
-| M0 | 三平台打通并沉淀构建脚本 | T001–T006（含 T001b） |
+| M0 | Web + Windows 打通并沉淀构建脚本（宪法 v0.2；微信端 T003 延后至发行阶段） | T001–T006（含 T001b；T003 延后不计入阻塞） |
 | M1 | H5 demo 可玩通一局，core 可测 | T101–T109 |
 | M2 | 微信小游戏适配与真机验收 | T201–T202 |
 | M3 | Windows + Steamworks 内部测试 | T301–T302 |
@@ -139,4 +139,5 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。
 | 2026-11-16 | T004b 完成并勾选：新增入库脚本 `build/scripts/run-windows.ps1`（幂等建 data 链接 + 启动，`-NoLaunch` 只建链），实测通过；修正 `.gitignore` 使 `build/scripts/` 入库、三个产物子目录仍忽略（兑现宪法 §3）。`build-templates/`（native/wechatgame 构建模板）纳入版本控制。§4 Windows 启动命令改为该脚本 |
 | 2026-11-16 | T001 完成并勾选：补齐宪法 §3 四大分层目录 `assets/core/`、`platform/{web,wx,win}/`、`resources/`（MCP 建目录 + `.meta` 入库）；引擎版本 3.8.8 双确认并回填 §1；§2 记录场景留在 `assets/scenes/` 的偏差与 M1 归位计划 |
 | 2026-11-16 | T005 完成并勾选：构建任务配置模板 `build/config/builder.json.template` 入库 + `setup-build-config.ps1` 恢复脚本（解决 profiles 不入库导致干净检出无构建任务）；`serve-web.ps1`（实测 HTTP 200）；§4 回填微信行 + 干净检出可重复构建流程 |
-| 2026-11-16 | T006 复盘：回填 §6 风险结论（R-1 = 2/3 通过、微信待 T003；R-2 = 未实际验证，待 M1 T102 写 core 代码后实测）。**状态保持 Draft**：按用户指示 T003 留待项目最后做，M0 未全部完成，按宪法 C-7 + AC-6 不改 Confirmed；T006 不勾选，待 T003 完成后收尾 |
+| 2026-11-16 | T006 复盘：回填 §6 风险结论（R-1 通过、R-2 未实际验证待 M1 T102 实测）。初按三端口径保持 Draft；后应用户「版号太麻烦、提前进 M1」要求，经宪法 v0.2 变更收窄 M0 判据为 Web + Windows 两端，状态改为 **Confirmed**、T006 勾选，M1 解锁 |
+| 2026-11-16 | **宪法 v0.2 变更**：微信小游戏因版号/类目/合规成本延后真机/上架验证，不计入 M0 阻塞（构建产物仍在 M0 生成）。级联更新：宪法 §1/C-7/§8、spec AC-6/§6、plan 状态与 R-1、tasks T003 转延后 / T006 收尾 |

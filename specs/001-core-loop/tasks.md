@@ -18,8 +18,9 @@
   完成判据：`StartMenu` 含标题 `Label` + 开始 `Button` + `StartMenu.ts`（点击跳转 `Placeholder`）；`scene_save_scene` 后出现在 `get_scene_list`；`debug_validate_scene` 无错误。**此场景是 M0 验证载体，不接 `core/`、不定义 `GameInput`、不写存档**，脚本逻辑在 T106 正式重写。文案暂用 ASCII（`ROGUE CARD` / `START`），原因见 `plan.md` §4。
 - [x] **T002** Web 构建跑通并在浏览器打开
   完成判据：在编辑器构建面板手动把 `StartMenu` 设为初始场景、把 `Placeholder` 加入场景列表（MCP 无法配置，见 R-6）；同一 `StartMenu` 在浏览器显示，标题与按钮可见、可点击并跳转；控制台无报错；记录构建命令。预览可用 `project_run_project` 启动，中文文案如需调整在编辑器 UI 改 `cc.Label.string`。
-- [ ] **T003** 微信小游戏构建跑通并在微信开发者工具打开
+- [ ] **T003** 微信小游戏构建跑通并在微信开发者工具打开（**延后至发行阶段，宪法 v0.2**）
   完成判据：同一 `StartMenu` 在模拟器/真机显示且按钮可点击跳转；记录 AppID 占位方式与构建命令。
+  状态（2026-11-16）：按用户要求「版号/合规太麻烦，提前进 M1」，经宪法 v0.2 变更，微信小游戏真机/上架验证**延后且不计入 M0 阻塞**。已完成部分：`wechatgame` 构建产物成功生成（验证单一工程多端打包可行），AppID 占位 `wx6ac3f5090a6b99c5`。未完成部分：`game.json` 竖屏需改横屏（Q-2）、`program.json` 未配开发者工具路径、未做模拟器/真机跳转验证。待发行阶段处理，不阻塞 M1。
 - [x] **T004** Windows 构建跑通并启动 exe
   完成判据：同一 `StartMenu` 在窗口显示且按钮可点击跳转；记录构建命令。
   排查结论（2026-11-16）：**卡 splash 根因为双因叠加**——(1) windows 构建任务 `startScene` 配成了空场景 `Placeholder`（`builder.json` task `1794222235632`，uuid `c5fa9308...`），而 Web 任务配的是 `StartMenu`（`207c2746...`）；空场景加载后一片深灰，酷似卡 splash。(2) exe 直接启动时须在 exe 同级目录有 `data` 资源链接（`build/windows/proj/Release/data` → `build/windows/data`），否则引擎读不到资源卡在 splash。对照实验（4 组）确认两因缺一不可；改用 `StartMenu` + 建链接后 `PrintWindow` 抓图可见 `ROGUE CARD`/`START` 正常渲染（证据 `WindowsBuild-StartMenu.png`）。用户 2026-11-16 在真实桌面双击 exe 验证：`ROGUE CARD`/`START` 显示正常、点击 START 跳转 Placeholder 正常、无错误。构建命令已回填 `plan.md` §4。持久化修复（避免重构建回退）转入 T004b。
@@ -31,10 +32,10 @@
 - [x] **T005** 沉淀 `build/` 构建脚本与三端命令文档，回填 `plan.md` §4
   完成判据：从干净检出可重复执行三端构建；注意 MCP 无法配置完整构建参数（`plan.md` §4）。
   完成内容（2026-11-16）：① 根因＝构建任务配置只在 `profiles/v2/packages/builder.json`（不入库），入库的 `settings/v2/packages/builder.json` 是空壳；② 新增入库模板 `build/config/builder.json.template`（从实测三端任务导出，无本机绝对路径，场景用 db://+UUID）；③ 新增 `build/scripts/setup-build-config.ps1`（关闭编辑器后把模板恢复到 profiles，自动备份 `.bak`，实测 hash 一致）；④ 新增 `build/scripts/serve-web.ps1`（封装 T002 的 Python http.server，实测 HTTP 200）；⑤ `plan.md` §4 回填微信行、补"干净检出可重复构建流程"小节。`run-windows.ps1` 已在 T004b 完成。边界：构建本身仍须编辑器 Build 面板点选（MCP 无法配置），T005 交付"配置模板 + 恢复/启动脚本 + 命令文档"；微信端 T003 暂缓未做真机验证，如实记录。
-- [ ] **T006** M0 复盘：回填 `plan.md` §6 风险结论
+- [x] **T006** M0 复盘：回填 `plan.md` §6 风险结论
   完成判据：`plan.md` 状态由 Draft 改为 Confirmed；R-1 未通过则先修订宪法，不进入 M1。
-  复盘进展（2026-11-16）：已回填 §6 风险结论——R-1 = 2/3 通过（Web T002、Windows T004 均真实环境验收通过；微信 T003 产物已生成但横屏修复+真机验证按用户指示留待项目最后做），R-2 = 未实际验证（T001 只建 `assets/core/` 空目录、无 core 代码参与编译，待 M1 T102 写纯 TS 状态机后实测回填），R-6 已填。宪法 C-2/C-3 未被证伪，无需修订。
-  **未勾选原因**：判据要求状态 Draft→Confirmed，但按用户指示 T003 暂缓、`spec.md` §6 明确"T003 未完成前 M0 不算打通"、AC-6 要求 M0 全部完成才能 Confirmed（宪法 C-7）。故 `plan.md` 状态保持 Draft，**不改为 Confirmed**，T006 不勾选；待 T003 完成后收尾改 Confirmed 并勾选。已如实写入 plan.md 状态字段与变更记录。
+  完成情况（2026-11-16）：回填 §6 风险结论——R-1 通过（宪法 v0.2 口径：M0 阻塞判据收窄为 Web T002 + Windows T004 两端，均真实环境验收通过；微信 T003 产物已生成、真机/上架验证延后不计入阻塞）、R-2 未实际验证（T001 只建 `assets/core/` 空目录、无 core 代码参与编译，待 M1 T102 写纯 TS 状态机后实测回填）、R-6 已填。宪法 C-2/C-3 未被证伪，无需修订。
+  **宪法变更（v0.1→v0.2）**：应用户「版号/合规太麻烦、提前进 M1」要求，走宪法 §7 变更流程——M0 打通判据由三端收窄为 Web + Windows 两端，微信小游戏延后至发行阶段。级联更新宪法 §1/C-7/§8、spec AC-6/§6、plan 状态 Draft→Confirmed 与 R-1、T003 转延后。`plan.md` 状态已改为 **Confirmed**，T006 勾选，**M1 解锁**。
 
 ## M1 H5 Demo（依赖 M0 + Q-1 确认）
 
@@ -84,4 +85,4 @@
 | T004 splash 根因排查 | 启动场景 / 资源路径 / 画面渲染 | 交叉对照实验（4 组，均用 `Start-Process` 启 exe + `PrintWindow` 抓窗口自身像素）：①原始（launchScene=Placeholder + 无 data 链接）→ splash；②仅建 `proj/Release/data` junction（Placeholder）→ 仍 splash；③改产物 `build/windows/data/src/settings.json` 的 `launchScene` 为 `StartMenu.scene` + data junction → `ROGUE CARD`/`START` 正常显示；④删 junction 后（StartMenu）→ 退回 splash。结论：**两因叠加**，缺一不可。源头：`builder.json` windows 任务（id `1794222235632`）`startScene=c5fa9308...`(Placeholder)，Web 任务为 `207c2746...`(StartMenu)。`PrintWindow` 证据图 `specs/001-core-loop/WindowsBuild-StartMenu.png`；splash 图 `specs/001-core-loop/WindowsBuild-splash.png`。产物临时改动（不入库）：`settings.json` 已改为 StartMenu、`proj/Release/data` junction 已建 | — |
 | T004 用户验收 | 画面 / 点击跳转 / 构建命令 | 用户 2026-11-16 在真实桌面双击 `build/windows/proj/Release/rougeCard.exe`（exe 同级 data 链接存在）：`ROGUE CARD` 与 `START` 正常显示、点击 START 跳转到 Placeholder 正常、无错误。构建命令 `cmake.exe --build build\windows\proj --config Release --parallel 8` + `Start-Process ...rougeCard.exe` 已回填 `plan.md` §4。T004 三项判据（显示/跳转/构建命令）全部满足，**已勾选**。持久化修复转入 T004b | — |
 | T004b 持久化脚本 | data 链接 / .gitignore / 幂等验证 | 用户 2026-11-16 在 Build 面板把 windows `startScene` 改为 StartMenu（源头）。查证 exe 只读 `proj/Release/data`、不读 cmake `Resources`（后者 launchScene 仍是 Placeholder，删链接仅留它仍卡 splash）。新增 `build/scripts/run-windows.ps1`（纯 ASCII 规避 PS5.1 中文 GBK 解析错误）：幂等建 data junction 后启动 exe，`-NoLaunch` 只建链。实测：删链后 `-NoLaunch` 自动重建→target 正确、幂等复跑提示 skip、完整运行启动 PID 61352 Responding=True、`PrintWindow` 抓图 `ROGUE CARD`/`START` 正常。修正 `.gitignore`：`build/` → 仅忽略 `web-desktop/`/`wechatgame/`/`windows/`，`build/scripts/` 可入库（`git check-ignore` 确认脚本未被忽略、产物仍被忽略）。T004b **已勾选** | — |
-| T006 M0 复盘 | 风险结论 / 状态约束 | 2026-11-16：回填 `plan.md` §6——R-1 = 2/3 通过（Web T002 + Windows T004 真实环境验收通过，微信产物已生成但横屏修复+真机验证待 T003）、R-2 = 未实际验证（T001 仅建 `assets/core/` 空目录、无 core 代码参与编译，待 M1 T102 实测）、R-6 已填；宪法 C-2/C-3 未被证伪、无需修订。用户指示 T003 留待项目最后做 → `spec.md` §6「T003 未完成前 M0 不算打通」+ AC-6 + 宪法 C-7 → `plan.md` 状态**保持 Draft、不改 Confirmed**，T006 **不勾选**，待 T003 完成后收尾。已写入 plan.md 状态字段与变更记录 | — |
+| T006 M0 复盘 | 风险结论 / 宪法变更 / 状态解锁 | 2026-11-16：回填 `plan.md` §6——R-1 通过（宪法 v0.2 口径：M0 阻塞判据 = Web T002 + Windows T004 两端，均真实环境验收通过；微信 T003 产物已生成、真机/上架验证延后不计入阻塞）、R-2 未实际验证（T001 仅建 `assets/core/` 空目录、待 M1 T102 实测）、R-6 已填；宪法 C-2/C-3 未被证伪。应用户「版号太麻烦、提前进 M1」要求走宪法 §7 变更流程：**宪法 v0.1→v0.2**，M0 判据由三端收窄为 Web+Windows 两端，微信延后至发行阶段；级联宪法 §1/C-7/§8、spec AC-6/§6、plan 状态与 R-1、tasks T003 转延后 / T006 勾选。`plan.md` 状态 **Draft→Confirmed**，T006 **已勾选**，**M1 解锁** | 宪法 v0.2 |
