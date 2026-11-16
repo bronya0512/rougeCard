@@ -39,8 +39,9 @@
 
 ## M1 H5 Demo（依赖 M0 + Q-1 确认）
 
-- [ ] **T101** 确认 Q-1（题材、核心操作、结束条件），写入 `spec.md` 并关闭该开放问题
+- [x] **T101** 确认 Q-1（题材、核心操作、结束条件），写入 `spec.md` 并关闭该开放问题
   完成判据：`spec.md` §7 中 Q-1 标记已确认；`plan.md` §5 映射同步更新。设计分辨率已由 Q-2 单独确认，不在此重复。
+  完成情况（2026-11-16）：Q-1 已在 `spec.md` §7 标记已确认并关闭（类杀戮尖塔卡牌肉鸽；六边形跑图 + 队伍回合制战斗；全队生命归 0 失败、击败第 5 层 boss 胜利；设定见 §1.1/§1.2）。本次补齐 `plan.md` §5 映射同步：头部关联由 FR-1~FR-7 / AC-1~AC-6 更新为 FR-1~FR-17 / AC-1~AC-14；映射表新增 FR-8~FR-17（全部为 `core/` 纯 TS 规则，落地 T102 类型 + T104 推进 + T109 验收）；T109 验收范围由 AC-1~AC-6 改为 AC-1~AC-14。
 - [ ] **T102** 定义 `core/` 状态模型、`GameInput`、`Snapshot`、存档 schema（纯 TS 类型）
   完成判据：无引擎/平台 import；类型可被单测直接引用。
 - [ ] **T103** 接入 `core/` 单测框架并完成首个用例（初始状态）
@@ -55,7 +56,7 @@
   完成判据：AC-3 通过；确认 Q-3 并回填结论。
 - [ ] **T108** 产出 H5 demo：Web 构建 + 可访问地址，完成一局全流程
   完成判据：AC-2 通过；确认 Q-5。
-- [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-6，记录证据，打检查点
+- [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-14，记录证据，打检查点
   完成判据：六条 AC 全部有证据；未通过项转为新 task 而非直接勾选。
 
 ## M2 / M3 / M4（backlog，M1 验收后再拆细）
@@ -86,3 +87,4 @@
 | T004 用户验收 | 画面 / 点击跳转 / 构建命令 | 用户 2026-11-16 在真实桌面双击 `build/windows/proj/Release/rougeCard.exe`（exe 同级 data 链接存在）：`ROGUE CARD` 与 `START` 正常显示、点击 START 跳转到 Placeholder 正常、无错误。构建命令 `cmake.exe --build build\windows\proj --config Release --parallel 8` + `Start-Process ...rougeCard.exe` 已回填 `plan.md` §4。T004 三项判据（显示/跳转/构建命令）全部满足，**已勾选**。持久化修复转入 T004b | — |
 | T004b 持久化脚本 | data 链接 / .gitignore / 幂等验证 | 用户 2026-11-16 在 Build 面板把 windows `startScene` 改为 StartMenu（源头）。查证 exe 只读 `proj/Release/data`、不读 cmake `Resources`（后者 launchScene 仍是 Placeholder，删链接仅留它仍卡 splash）。新增 `build/scripts/run-windows.ps1`（纯 ASCII 规避 PS5.1 中文 GBK 解析错误）：幂等建 data junction 后启动 exe，`-NoLaunch` 只建链。实测：删链后 `-NoLaunch` 自动重建→target 正确、幂等复跑提示 skip、完整运行启动 PID 61352 Responding=True、`PrintWindow` 抓图 `ROGUE CARD`/`START` 正常。修正 `.gitignore`：`build/` → 仅忽略 `web-desktop/`/`wechatgame/`/`windows/`，`build/scripts/` 可入库（`git check-ignore` 确认脚本未被忽略、产物仍被忽略）。T004b **已勾选** | — |
 | T006 M0 复盘 | 风险结论 / 宪法变更 / 状态解锁 | 2026-11-16：回填 `plan.md` §6——R-1 通过（宪法 v0.2 口径：M0 阻塞判据 = Web T002 + Windows T004 两端，均真实环境验收通过；微信 T003 产物已生成、真机/上架验证延后不计入阻塞）、R-2 未实际验证（T001 仅建 `assets/core/` 空目录、待 M1 T102 实测）、R-6 已填；宪法 C-2/C-3 未被证伪。应用户「版号太麻烦、提前进 M1」要求走宪法 §7 变更流程：**宪法 v0.1→v0.2**，M0 判据由三端收窄为 Web+Windows 两端，微信延后至发行阶段；级联宪法 §1/C-7/§8、spec AC-6/§6、plan 状态与 R-1、tasks T003 转延后 / T006 勾选。`plan.md` 状态 **Draft→Confirmed**，T006 **已勾选**，**M1 解锁** | 宪法 v0.2 |
+| T101 Q-1 映射同步 | Q-1 状态 / plan §5 映射 / AC 引用 | 2026-11-16：`spec.md` §7 Q-1 已标记「已确认，已关闭」（类杀戮尖塔卡牌肉鸽 + 六边形跑图 + 回合制战斗，设定 §1.1/§1.2）。补齐 `plan.md`：① 头部关联 FR-1~FR-7/AC-1~AC-6 → FR-1~FR-17/AC-1~AC-14；② §5 映射表新增 FR-8~FR-17 共 10 条（均为 `core/` 纯 TS 规则 → T102 类型 + T104 推进 + T109 验收）；③ 加说明 FR-8~17 由 T104 实现、T106 只渲染 Snapshot；④ `tasks.md` T109 验收范围 AC-1~AC-6 → AC-1~AC-14。T101 **已勾选** | — |
