@@ -118,7 +118,7 @@ T002 Web 构建产物实测补充（2026-11-09）：
 | 编号 | 风险 | 验证时机 | 结论 |
 |---|---|---|---|
 | R-1 | 构建链路跑不通，架构假设不成立 | M0（T002–T004） | **通过（宪法 v0.2 口径）**：M0 阻塞判据为 Web + Windows 两端——Web 实包构建 + 浏览器运行 + 输入与场景切换通过（T002）；Windows 构建 + exe 启动 + StartMenu 显示与点击跳转通过（T004，用户真实桌面验收）。微信小游戏构建产物已生成（验证单一工程多端打包可行），真机/上架验证因版号合规延后（T003，不计入 M0 阻塞）。宪法 C-2/C-3 未被证伪 |
-| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001） | **未实际验证**：T001 只建立 `assets/core/` 空目录（宪法 §3 分层），尚无 `core/` 代码参与编译，无法判定与 Cocos tsconfig/打包器的兼容性。待 M1 T102 写入首批纯 TS 状态机后，由该 task 的编译/单测实测回填；风险本身仍开放 |
+| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001）/ M1（T102） | **部分验证，风险降低但未关闭**：T102 已写入首批纯 TS 类型模型（`assets/core/` 7 模块，无 `cc` import），用 Cocos 内置 tsc `--strict --skipLibCheck` 检查 exit=0、编译为 CJS 后 node 可引用 → 类型层面与 TS 工具链兼容。但尚未参与真实 Cocos 游戏构建/打包（game/ 组件订阅 Snapshot 在 T106），打包器兼容性待 T106 接入后验证。根 `tsconfig.json` 的 `strict: false` 已改回 `true`（对齐宪法 C-1） |
 | R-3 | 微信小游戏首包体积与分包策略 | M2 | `[待回填]` |
 | R-4 | Windows 包与 Steamworks SDK 的集成方式 | M3 | `[待回填]` |
 | R-5 | task 粒度过大，无法独立验证导致 spec 流程失效 | 全程 | 约束：单 task 估时 ≤ 半天 |
@@ -153,3 +153,5 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-16 | T005 完成并勾选：构建任务配置模板 `build/config/builder.json.template` 入库 + `setup-build-config.ps1` 恢复脚本（解决 profiles 不入库导致干净检出无构建任务）；`serve-web.ps1`（实测 HTTP 200）；§4 回填微信行 + 干净检出可重复构建流程 |
 | 2026-11-16 | T006 复盘：回填 §6 风险结论（R-1 通过、R-2 未实际验证待 M1 T102 实测）。初按三端口径保持 Draft；后应用户「版号太麻烦、提前进 M1」要求，经宪法 v0.2 变更收窄 M0 判据为 Web + Windows 两端，状态改为 **Confirmed**、T006 勾选，M1 解锁 |
 | 2026-11-16 | **宪法 v0.2 变更**：微信小游戏因版号/类目/合规成本延后真机/上架验证，不计入 M0 阻塞（构建产物仍在 M0 生成）。级联更新：宪法 §1/C-7/§8、spec AC-6/§6、plan 状态与 R-1、tasks T003 转延后 / T006 收尾 |
+| 2026-11-16 | T101 完成并勾选：Q-1 已确认关闭；`plan.md` §5 映射同步——补 FR-8~FR-17 共 10 条 core 规则映射、头部关联扩到 FR-1~17/AC-1~14、T109 验收范围同步 |
+| 2026-11-16 | T102 完成并勾选：`assets/core/` 新增 7 个纯 TS 类型模块（GameState/GameInput/Snapshot/SaveData/契约签名），无引擎/平台 import；Cocos tsc `--strict` 检查 exit=0、CJS 编译后 node 可引用；根 `tsconfig.json` `strict:false`→`true` 对齐宪法 C-1；§6 R-2 更新为部分验证、风险降低待 T106 打包验证 |
