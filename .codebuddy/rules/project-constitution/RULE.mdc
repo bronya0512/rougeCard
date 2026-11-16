@@ -1,0 +1,43 @@
+---
+description: 项目架构硬约束（分层、平台隔离、编码规范、完成定义），所有代码改动必须遵守
+alwaysApply: true
+enabled: true
+---
+
+# 项目宪法（强制）
+
+完整版本见根目录 `constitution.md`。以下为每次改代码都必须遵守的硬约束，冲突时停下来向用户说明，不擅自破例。
+
+## 分层与依赖
+
+- 单一 Cocos Creator 3.8 LTS 工程，仅 TypeScript；H5 demo 就是该工程的 Web 构建产物，不存在"移植"阶段。
+- `assets/core/`：纯 TypeScript 玩法逻辑，**禁止 import `cc` 或任何引擎/平台 API**。
+- `assets/game/`：Cocos 场景与组件，只转发 `GameInput`、订阅 `Snapshot` 渲染，不持有业务状态、不直接改 core 状态。
+- `assets/platform/`：一切平台差异必须经 `PlatformAdapter`，按构建目标注入 `web/` / `wx/` / `win/` 实现。
+- 依赖方向单向：`game/ → core/`、`game/ → platform/`、`platform/ → core/`；`core/` 不依赖任何外层。
+
+## 禁止项
+
+- 禁止在 `assets/core/`、`assets/game/` 出现 `wx.`、`steam`、`window.`、`document.` 等平台标识。
+- 禁止业务代码里出现运行时平台判断分支；平台能力一律走适配器。
+- `core/` 禁止直接读 `Date.now()` / `Math.random()`，时间与随机数须通过注入的 `Clock` / `Rng`，否则无法保证三端结果一致。
+- 禁止 `any`（用 `unknown` + 类型守卫）；TypeScript `strict` 必须开启。
+
+## 非目标（未经宪法变更不得引入）
+
+联网、服务端、账号体系、内购、热更新、终版美术。
+
+## 完成定义（每个 task 勾选前逐条满足）
+
+1. 符合上述分层与编码约束。
+2. Web 构建通过且浏览器可运行；涉及平台差异时对应端构建通过。
+3. `core/` 改动有单元测试且通过。
+4. 全仓静态搜索确认无平台 API 泄漏。
+5. 在 `tasks.md` 勾选并记录验证证据，打检查点。
+
+## 流程约束
+
+- `spec.md` 只写做什么与验收标准，`plan.md` 只写技术方案，`tasks.md` 只写可执行可验证的小步骤。
+- 需求变更先改 `spec.md`，再级联更新 `plan.md` / `tasks.md`；禁止直接改代码绕过。
+- 一次会话只做一条 task，单 task 估时不超过半天。
+- 架构决策必须建立在 M0 实测构建链路上；未经 M0 验证的平台参数不要写死。
