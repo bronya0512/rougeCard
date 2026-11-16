@@ -5,9 +5,11 @@
 library/
 temp/
 local/
-build/
+build/web-desktop/
+build/wechatgame/
+build/windows/
 profiles/
-native
+/native
 #//////////////////////////
 # NPM
 #//////////////////////////
