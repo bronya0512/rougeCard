@@ -1,7 +1,7 @@
 # Plan 001：核心循环
 
 > 对应 CodeBuddy Plan 模式产物。技术细节只写在这里，不写进 `spec.md`。
-> 状态：Draft —— **待 M0 spike 实测结果回填后改为 Confirmed**（宪法 C-7）。
+> 状态：Draft —— T006 复盘已完成（风险结论见 §6），但 **M0 未全部完成**：T003 微信小游戏横屏修复与真机验证按用户指示留待项目最后做。按宪法 C-7 + `spec.md` AC-6「M0 全部完成且状态为 Confirmed 才进 M1」，状态保持 Draft，不改为 Confirmed。待 T003 完成后再由 T006 收尾改 Confirmed。
 
 关联：`spec.md` FR-1 ~ FR-7 / AC-1 ~ AC-6
 
@@ -105,8 +105,8 @@ T002 Web 构建产物实测补充（2026-11-09）：
 
 | 编号 | 风险 | 验证时机 | 结论 |
 |---|---|---|---|
-| R-1 | 三端构建链路任一跑不通，架构假设不成立 | M0（T002–T004） | 部分验证：Web 实包构建 + 浏览器运行 + 输入与场景切换已通过（T002）；微信小游戏 / Windows 待 T003–T004 回填 |
-| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001） | `[待回填]` |
+| R-1 | 三端构建链路任一跑不通，架构假设不成立 | M0（T002–T004） | **2/3 通过**：Web 实包构建 + 浏览器运行 + 输入与场景切换通过（T002）；Windows 构建 + exe 启动 + StartMenu 显示与点击跳转通过（T004，用户真实桌面验收）。微信小游戏构建产物已成功生成，但**横屏修复与真机验证待 T003（用户指示项目最后做）**。R-1 未完全通过 → 按下方约束不得进入 M1，宪法 C-2/C-3 未被证伪、无需修订 |
+| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001） | **未实际验证**：T001 只建立 `assets/core/` 空目录（宪法 §3 分层），尚无 `core/` 代码参与编译，无法判定与 Cocos tsconfig/打包器的兼容性。待 M1 T102 写入首批纯 TS 状态机后，由该 task 的编译/单测实测回填；风险本身仍开放 |
 | R-3 | 微信小游戏首包体积与分包策略 | M2 | `[待回填]` |
 | R-4 | Windows 包与 Steamworks SDK 的集成方式 | M3 | `[待回填]` |
 | R-5 | task 粒度过大，无法独立验证导致 spec 流程失效 | 全程 | 约束：单 task 估时 ≤ 半天 |
@@ -138,3 +138,5 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。
 | 2026-11-16 | T004 用户真实桌面验收通过，已勾选；截图 `WindowsBuild-StartMenu.png` 入库。用户已在 Build 面板把 windows 启动场景改为 StartMenu（源头已修）。T004b 查证 data 链接本质：exe 只读 `proj/Release/data`（junction → `build/windows/data`），不读 cmake `Resources`（陈旧副本 launchScene=Placeholder），删链接仅留 Resources 仍卡 splash——链接为必需条件 |
 | 2026-11-16 | T004b 完成并勾选：新增入库脚本 `build/scripts/run-windows.ps1`（幂等建 data 链接 + 启动，`-NoLaunch` 只建链），实测通过；修正 `.gitignore` 使 `build/scripts/` 入库、三个产物子目录仍忽略（兑现宪法 §3）。`build-templates/`（native/wechatgame 构建模板）纳入版本控制。§4 Windows 启动命令改为该脚本 |
 | 2026-11-16 | T001 完成并勾选：补齐宪法 §3 四大分层目录 `assets/core/`、`platform/{web,wx,win}/`、`resources/`（MCP 建目录 + `.meta` 入库）；引擎版本 3.8.8 双确认并回填 §1；§2 记录场景留在 `assets/scenes/` 的偏差与 M1 归位计划 |
+| 2026-11-16 | T005 完成并勾选：构建任务配置模板 `build/config/builder.json.template` 入库 + `setup-build-config.ps1` 恢复脚本（解决 profiles 不入库导致干净检出无构建任务）；`serve-web.ps1`（实测 HTTP 200）；§4 回填微信行 + 干净检出可重复构建流程 |
+| 2026-11-16 | T006 复盘：回填 §6 风险结论（R-1 = 2/3 通过、微信待 T003；R-2 = 未实际验证，待 M1 T102 写 core 代码后实测）。**状态保持 Draft**：按用户指示 T003 留待项目最后做，M0 未全部完成，按宪法 C-7 + AC-6 不改 Confirmed；T006 不勾选，待 T003 完成后收尾 |
