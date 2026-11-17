@@ -31,17 +31,19 @@
 - `PlatformAdapter` 在启动时按构建目标注入一次实现，业务层只见接口。
 - **目录现状偏差（2026-11-16，T001）**：宪法 §3 将场景归 `assets/game/`，但 M0 smoke test 的两张场景实际位于 `assets/scenes/`（T001b 建立的布局，T002/T004 的构建配置已引用该路径）。为避免破坏已验证的三端构建链路，M0 阶段保留此布局；M1 正式实现（T106）时再把场景归位到 `assets/game/`，并同步更新 `builder.json` 构建任务的场景路径。四大分层 `core/`、`platform/{web,wx,win}/`、`game/`、`resources/` 已建齐（T001）。
 
-## 3. PlatformAdapter 接口草案
+## 3. PlatformAdapter 接口（T105 定稿）
 
-| 接口 | 方法（草案） | Web | 微信小游戏 | Windows |
+契约定义在 `assets/core/platform.ts`（core 定义端口、platform 实现，保持 core 不依赖下层）；三端实现在 `assets/platform/{web,wx,win}/index.ts`。启动时按构建目标注入一次 `PlatformAdapter`（plan §2）。
+
+| 接口 | 定稿签名 | Web 实现 | 微信小游戏 | Windows |
 |---|---|---|---|---|
-| `Storage` | `get/set/remove` | `localStorage` | `wx.setStorage*` | 文件 + Steam Cloud（M3） |
-| `Input` | 输入事件归一化 | 触摸 + 键鼠 | 触摸 | 键鼠 |
-| `Audio` | `play/stop/setVolume` | WebAudio（需处理自动播放） | `wx.createInnerAudioContext` | 原生音频 |
-| `Achievement` | `unlock` | 空实现 | 空实现 | Steamworks（M3） |
-| `Share` | `share` | 空实现 | `wx.shareAppMessage`（M2） | 空实现 |
+| `StoragePort` | `get(key): string \| null` / `set(key, value): void` / `remove(key): void` | `localStorage` 真实读写 | 内存 Map（空实现） | 内存 Map（空实现） |
+| `InputPort` | `onEvent(handler): void` / `offEvent(handler): void`，事件 `PlatformInputEvent { kind:'key'\|'pointer', key?, x?, y? }` | `keydown` + `pointerdown` 归一化 | no-op（空实现） | no-op（空实现） |
+| `AudioPort` | `play(clipId)` / `stop(clipId)` / `setVolume(volume)` | no-op（M1 无音频资源） | no-op | no-op |
+| `AchievementPort` | `unlock(id): void` | no-op | no-op | Steamworks（M3） |
+| `SharePort` | `share(payload: SharePayload): void` | warn（未实现） | `wx.shareAppMessage`（M2） | no-op |
 
-空实现是合法实现，用于保证 M1 阶段接口完整、三端可编译。具体签名由 T105 定稿。
+`PlatformAdapter = { storage, input, audio, achievement, share }`，工厂 `createWebAdapter()` / `createWxAdapter()` / `createWinAdapter()`。空实现是合法实现，保证 M1 接口完整、三端可编译。Cocos tsconfig 无 DOM lib，Web 实现用最小 `declare` 声明所需浏览器全局；AC-4 白名单：`assets/platform/` 允许平台 API（core/game 仍禁止）。验证：`test-core.ps1` 追加 Cocos 配置（ES2015）三端类型检查，exit=0。
 
 ## 4. 构建与验证流程（T005 回填）
 
@@ -157,3 +159,4 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-16 | T102 完成并勾选：`assets/core/` 新增 7 个纯 TS 类型模块（GameState/GameInput/Snapshot/SaveData/契约签名），无引擎/平台 import；Cocos tsc `--strict` 检查 exit=0、CJS 编译后 node 可引用；根 `tsconfig.json` `strict:false`→`true` 对齐宪法 C-1；§6 R-2 更新为部分验证、风险降低待 T106 打包验证 |
 | 2026-11-16 | T103 完成并勾选：单测框架定稿为零依赖 `node:test` + Cocos 内置 tsc 预编译（回填 §1）；新增 `build/scripts/test-core.ps1` 可重复命令与 `tests/core/init.test.ts` 首个用例（3 用例全过） |
 | 2026-11-16 | T104 完成并勾选：`assets/core/` 新增 rng/map/engine 三个实现模块，落地 initGame/advance/buildSnapshot 全部 FR 规则；GameConfig 扩展 restNodes+EnemyDef；`tests/core/engine.test.ts` 13 用例覆盖 AC-7~14/FR-4/FR-16 + 判据两条；strict 编译 12 TS 通过、16/16 全过；§6 R-2 更新为逻辑层已验证、打包器待 T106 |
+| 2026-11-16 | T105 完成并勾选：`assets/core/platform.ts` 定稿 PlatformAdapter 五端口契约；`assets/platform/{web,wx,win}/index.ts` 三端实现（Web 真实 Storage+Input，wx/win 空实现）；修复 T104 Array.includes→indexOf（ES2015）；test-core.ps1 追加三端类型检查；plan §3 接口草案→定稿 |

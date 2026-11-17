@@ -374,7 +374,7 @@ export const advance: Advance = (state: GameState, input: GameInput, ctx: CoreCo
 
         case 'chooseReward': {
             if (state.phase !== 'reward') return reject(state, 'no reward to choose');
-            if (!state.rewardCandidates.includes(input.defId)) {
+            if (state.rewardCandidates.indexOf(input.defId) < 0) {
                 return reject(state, 'card is not a reward candidate');
             }
             const newCard: CardInstance = {

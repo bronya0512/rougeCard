@@ -9,3 +9,4 @@ export * from './contract';
 export * from './rng';
 export * from './map';
 export * from './engine';
+export * from './platform';

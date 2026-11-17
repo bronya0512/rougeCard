@@ -54,4 +54,16 @@ if ($LASTEXITCODE -ne 0) {
     throw "Tests failed (exit $LASTEXITCODE)."
 }
 
+# T105: verify all three platform adapters compile under the real Cocos config
+# (ES2015, no DOM lib). Covers the "other two ends have compilable empty impls"
+# criterion. Uses noEmit so it does not disturb the emitted test files.
+$platformFiles = @(Get-ChildItem -Path (Join-Path $repoRoot 'assets\platform') -Filter '*.ts' -File -Recurse | ForEach-Object { $_.FullName })
+if ($platformFiles.Count -gt 0) {
+    Write-Host "[test-core] type-checking $($platformFiles.Count) platform adapter file(s) with Cocos config (ES2015) ..."
+    & node $tsc --noEmit --strict --skipLibCheck --target ES2015 --module ES2015 --moduleResolution node --experimentalDecorators @($coreFiles.FullName) @platformFiles
+    if ($LASTEXITCODE -ne 0) {
+        throw "Platform adapter compilation failed (exit $LASTEXITCODE)."
+    }
+}
+
 Write-Host '[test-core] ALL TESTS PASSED'
