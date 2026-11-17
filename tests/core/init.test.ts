@@ -92,6 +92,7 @@ test('isSaveData accepts a valid save and rejects malformed input', () => {
         schemaVersion: SAVE_SCHEMA_VERSION,
         savedAt: 1000,
         state: makeInitialState(9),
+        rngState: 9,
     };
     assert.equal(isSaveData(save), true);
     assert.equal(isSaveData(null), false);

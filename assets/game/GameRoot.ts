@@ -17,7 +17,7 @@ import {
     UITransform,
     Vec3,
 } from 'cc';
-import type { GameConfig, Snapshot, HexCoord } from '../core';
+import type { GameConfig, Snapshot, HexCoord, StoragePort } from '../core';
 import { GameSession } from './GameSession';
 
 const { ccclass } = _decorator;
@@ -60,6 +60,7 @@ const C = {
 @ccclass('GameRoot')
 export class GameRoot extends Component {
     private session!: GameSession;
+    private storage!: StoragePort;
     private readonly uiNodes: Node[] = [];
     private mapGfx!: Graphics;
     private headerLabel!: Label;
@@ -71,14 +72,21 @@ export class GameRoot extends Component {
     private readonly hexSize = 46;
 
     onLoad(): void {
-        this.session = new GameSession(defaultConfig(20261116));
         input.on(Input.EventType.KEY_DOWN, this.onKey, this);
         this.buildUi();
-        this.render();
     }
 
     onDestroy(): void {
         input.off(Input.EventType.KEY_DOWN, this.onKey, this);
+    }
+
+    /** Composition root injects the platform StoragePort (T107 / FR-5). */
+    configure(storage: StoragePort): void {
+        this.storage = storage;
+        this.session = GameSession.load(storage, defaultConfig(20261116));
+        this.session.save(); // persist immediately: fresh run or normalized loaded run
+        this.selectedAlly = 0;
+        this.render();
     }
 
     private makeLabel(name: string, parent: Node, x: number, y: number, w: number, h: number, size = 20): Label {
@@ -205,6 +213,7 @@ export class GameRoot extends Component {
     }
 
     private onKey(event: EventKeyboard): void {
+        if (this.session === undefined) return; // ignore input before configure()
         const s = this.session.snapshot;
         let changed = true;
         switch (event.keyCode) {
@@ -238,7 +247,9 @@ export class GameRoot extends Component {
                 break;
             case KeyCode.KEY_R:
                 if (s.phase === 'victory' || s.phase === 'defeat') {
-                    this.session = new GameSession(defaultConfig(20261116));
+                    this.session.clearSave();
+                    this.session = new GameSession(defaultConfig(20261116), { storage: this.storage });
+                    this.session.save(); // persist the fresh run as the new baseline
                     this.selectedAlly = 0;
                 }
                 break;

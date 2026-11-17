@@ -1,5 +1,6 @@
 import { _decorator, Component, Node } from 'cc';
 import { GameRoot } from './GameRoot';
+import { createWebAdapter } from '../platform/web';
 const { ccclass } = _decorator;
 
 /** M0 entry point: START now boots the core-backed GameRoot in-place. */
@@ -26,7 +27,10 @@ export class StartMenu extends Component {
             console.warn('[StartMenu] no Canvas parent found');
             return;
         }
-        canvas.addComponent(GameRoot);
+        // Composition root: build the Web adapter and inject its StoragePort
+        // into GameRoot (T107). GameRoot/core never import platform code.
+        const root = canvas.addComponent(GameRoot);
+        root.configure(createWebAdapter().storage);
         // Hide the menu UI so it does not overlay the game.
         const title = canvas.getChildByName('TitleLabel');
         const button = canvas.getChildByName('StartButton');

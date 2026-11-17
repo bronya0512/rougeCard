@@ -30,9 +30,12 @@ if (-not (Test-Path $tsc)) {
 }
 
 $coreFiles = @(Get-ChildItem -Path (Join-Path $repoRoot 'assets\core') -Filter '*.ts' -File)
+# T107: GameSession is pure TS (no `cc`) and is tested for save/load behavior.
+$gameSessionFile = @(Get-ChildItem -Path (Join-Path $repoRoot 'assets\game\GameSession.ts') -File -ErrorAction SilentlyContinue)
 $testFiles = @(Get-ChildItem -Path (Join-Path $repoRoot 'tests\core') -Filter '*.test.ts' -File -Recurse)
+$testFiles += @(Get-ChildItem -Path (Join-Path $repoRoot 'tests\game') -Filter '*.test.ts' -File -Recurse -ErrorAction SilentlyContinue)
 if ($testFiles.Count -eq 0) {
-    throw 'No test files found under tests/core/.'
+    throw 'No test files found under tests/core/ or tests/game/.'
 }
 
 if (Test-Path $outDir) {
