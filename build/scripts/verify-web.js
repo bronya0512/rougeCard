@@ -1,7 +1,7 @@
 async page => {
     const url = page.url();
     const preview = url.includes(':7456/');
-    const prefix = preview ? 'FloorsPreview' : 'Floors';
+    const prefix = preview ? 'TeamPreview' : 'Team';
     const errors = [];
     const httpErrors = [];
     const trace = [];
@@ -19,8 +19,11 @@ async page => {
         if (typeof System === 'undefined') return null;
         const cc = await System.import('cc');
         const canvas = cc.director.getScene()?.getChildByName('Canvas');
-        const root = canvas?.components.find(component => component.session);
+        const root = canvas?.components.find(component => component.teamSelection);
         if (!root) return null;
+        if (root.choosingTeam) return { snapshot: null, ui: { team: true,
+            ids: root.teamSelection.selectedIds, canConfirm: root.teamSelection.canConfirm,
+            canContinue: root.continueRun.node.active }, save: localStorage.getItem('roguecard.save.v1') };
         const label = node => node.getChildByName('Text').getComponent(cc.Label).string;
         const ui = {
             header: canvas.getChildByName('Header').getComponent(cc.Label).string,
@@ -54,7 +57,9 @@ async page => {
         await page.mouse.click(point.x, point.y, { button });
         await page.waitForTimeout(100);
         const view = await read();
-        if (view) {
+        if (view?.ui.team) {
+            trace.push({ action: `${button}:${path}`, phase: 'team', ids: view.ui.ids });
+        } else if (view) {
             const s = view.snapshot;
             trace.push({ action: `${button}:${path}`, phase: s.phase, revision: s.revision,
                 floor: s.floor, floorCount: s.floorCount, partyHp: s.party.map(hero => hero.hp),
@@ -123,11 +128,36 @@ async page => {
             if (stats) await page.locator('#btn-show-fps').click();
             await page.waitForTimeout(200);
         }
-        return click('StartButton');
+        const team = await click('StartButton');
+        check(team.ui.team && team.snapshot === null, 'START did not show pre-session team selection');
+        return team;
+    };
+    const resume = async () => {
+        const team = await start();
+        check(team.ui.canContinue, 'Existing save cannot continue');
+        const before = team.save;
+        await click('TeamPage/Roster_1');
+        const after = await click('TeamPage/Roster_2');
+        check(after.save === before, 'Unconfirmed selection overwrote save');
+        return click('TeamPage/ContinueRun');
     };
 
     await page.setViewportSize({ width: 1280, height: 1080 });
     let view = await start();
+    check(view.save === null, 'Use a new isolated browser session with no existing save');
+    await capture('Selection');
+    view = await click('TeamPage/ConfirmTeam');
+    check(view.ui.team && view.save === null, 'Empty party started or saved');
+    await click('TeamPage/Roster_0');
+    view = await click('TeamPage/ConfirmTeam');
+    check(view.ui.team && view.save === null, 'One-person party started or saved');
+    await click('TeamPage/Roster_0');
+    view = await click('TeamPage/Roster_2');
+    check(view.ui.ids.length === 1, 'Repeated role click did not toggle');
+    await click('TeamPage/Roster_0');
+    view = await click('TeamPage/ConfirmTeam');
+    check(view.snapshot.party.map(hero => hero.id).join(',') === 'hero-blue,hero-red', 'Two-person order incorrect');
+    check(view.snapshot.drawCount === 6, 'Expected six starting cards');
     check(view.snapshot.floor === 1 && [3, 4, 5].includes(view.snapshot.floorCount), 'Expected a configurable multi-floor new run');
     const floorCount = view.snapshot.floorCount;
     check(view.snapshot.phase === 'map' && view.snapshot.revision === 0,
@@ -178,7 +208,7 @@ async page => {
     check(view.snapshot.party[1].block === 3, 'Defense did not apply to clicked teammate');
 
     const beforeLoad = view;
-    view = await start();
+    view = await resume();
     unchanged(beforeLoad, view, 'Battle reload differs from last saved state');
     check(view.ui.battle && !view.ui.map && view.ui.selected === null, 'Loaded battle page or selection incorrect');
     view = await fight();
@@ -248,7 +278,7 @@ async page => {
             check(saved.schemaVersion === 2 && saved.state.completedMaps.length === floor, 'Floor history was not saved');
             await capture(`Floor${floor + 1}`);
             const before = view;
-            view = await start();
+            view = await resume();
             unchanged(before, view, 'Floor transition reload differs from save');
             check(view.ui.map && view.ui.selected === null && !view.ui.infoActive, 'Floor UI did not reset');
         } else {
@@ -259,12 +289,37 @@ async page => {
     await capture('Victory');
     const finalRevision = view.snapshot.revision;
     const finalPartyHp = view.snapshot.party.map(hero => hero.hp);
+    const settledSave = view.save;
     view = await click('SettlementPage/Restart');
-    check(view.snapshot.phase === 'map' && view.snapshot.revision === 0, 'Mouse restart failed');
+    check(view.ui.team && view.save === settledSave, 'Restart must return to team page without erasing settled save');
+    for (const index of [1, 0, 2]) await click(`TeamPage/Roster_${index}`);
+    await capture('ThreeSelected');
+    view = await click('TeamPage/ConfirmTeam');
+    check(view.snapshot.revision === 0 && view.snapshot.drawCount === 9
+        && view.snapshot.party.map(hero => hero.color).join(',') === 'green,red,blue', 'Three-role composition incorrect');
+    const neighbor = view.snapshot.map.nodes.find(node => node.kind === 'battle' && distance(node.coord, view.snapshot.map.position) === 1);
+    view = await advance(tile(neighbor.coord), 'right');
+    check(view.ui.heroXs.length === 3 && view.ui.heroXs.every((x, i, all) => i === 0 || x > all[i - 1]),
+        'Three allies not ordered on screen');
+    check(view.snapshot.energy.green === 1, 'Green energy missing');
+    let guardIndex = -1;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+        guardIndex = view.snapshot.hand.findIndex(card => card.playable && card.def.color === 'green' && card.def.effect.kind === 'defend');
+        if (guardIndex >= 0) break;
+        view = await advance('BattlePage/EndTurn');
+    }
+    check(guardIndex >= 0, 'No playable green guard after drawing');
+    await click(`BattlePage/HandCard_${guardIndex}`);
+    view = await advance('BattlePage/HeroTarget_2');
+    check(view.snapshot.party[2].block === 3 && view.snapshot.energy.green === 0, 'Green defense failed on third ally');
+    await capture('ThreeBattle');
+    const beforeResume = view;
+    view = await resume();
+    unchanged(beforeResume, view, 'Three-person battle reload changed party/order/cards');
     await page.waitForTimeout(200);
     check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
     check(httpErrors.length === 0, `HTTP errors: ${httpErrors.join('; ')}`);
-    return { result: preview ? 'T111 PREVIEW PASS' : 'AC-15~21 WEB PASS', source: preview ? 'editor-preview' : 'web-build',
+    return { result: preview ? 'T112 PREVIEW PASS' : 'AC-15~24 WEB PASS', source: preview ? 'editor-preview' : 'web-build',
         url, floorCount, errors, httpErrors, contextPrevented, finalRevision, finalPartyHp, mouseActions: trace.length,
         keyboardActions: 0, trace };
 }

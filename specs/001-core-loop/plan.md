@@ -3,7 +3,7 @@
 > 对应 CodeBuddy Plan 模式产物。技术细节只写在这里，不写进 `spec.md`。
 > 状态：Confirmed —— T006 复盘完成（风险结论见 §6），M0 阻塞项按**宪法 v0.2** 判据（Web + Windows 两端打通）已全部完成。微信小游戏 T003 因版号/合规成本按用户指示延后，不计入 M0 阻塞（构建产物已在 M0 生成）。据宪法 C-7 + `spec.md` AC-6（v0.2 口径），状态由 Draft 改为 Confirmed，解锁 M1。
 
-关联：`spec.md` FR-1 ~ FR-19 / AC-1 ~ AC-21
+关联：`spec.md` FR-1 ~ FR-20 / AC-1 ~ AC-24
 
 ## 1. 技术选型
 
@@ -31,6 +31,7 @@
 - `PlatformAdapter` 在启动时按构建目标注入一次实现，业务层只见接口。
 - **T110 鼠标交互**：沿用 StartMenu 和 GameSession，在 GameRoot 的 Canvas 内用 MapPage/BattlePage/RewardPage/SettlementPage 显隐切页；enemy 在左、party 按原顺序置于右。BattleSelection 为纯 TS 临时选卡对象（uid），只产出合法 GameInput，选卡/信息展示不推进、不存档。Cocos EventMouse.getLocation → Canvas.cameraComponent.screenToWorld → UITransform.convertToNodeSpaceAR 做节点命中，避免 fitWidth 下可见高度与设计高度不一致造成偏移；Web 层提供画布右键菜单抑制及释放函数，由 StartMenu 生命周期安装/清理，不在 game/core 引入浏览器全局。右键移动仍委托 advance 校验。提供结束回合、取消、奖励和重开按钮；verify-web.js 改为纯鼠标验收，原 T108 证据保留。
 - **T111 多层地图**：GameConfig.floorCount（新局默认3，可选3/4/5；1只兼容旧档/单层测试）、GameState.floor（从1开始）与completedMaps（仅已完成楼层，当前map为唯一权威），Snapshot展示floor/floorCount。非最终boss致命出牌后归弃剩余手牌、清空能量/格挡、归档当前图，再用现有注入RNG生成下一层，HP/alive与牌UID不变；不重跑initGame、不增加boss奖励/难度。SaveData schema升级2，原key保持稳定，core.decodeSaveData将完整旧schema1单层档迁移为floor=1/floorCount=1，不把旧胜利改写为三层；新版校验楼层与历史地图长度，RNG状态续接。GameRoot楼层变化重新生成节点UI、清临时信息/选卡；Inspector可配置层数，鼠标验收扩展到所有楼层。
+- **T112 组队**：GameConfig.startingParty可选（有序CharacterDef，id/颜色/专属起始牌），core先校验人数2~3/唯一id/颜色/牌引用，再初始化所选角色与合成牌组；无字段旧配置保留红蓝和startingDeck。组队是会话创建前临时UI，不新增core阶段；TeamSelection记录有序角色选择，TeamPage提供确认和继续旧档。GameSession.readSave只读校验/迁移存档，不初始化、不覆盖。确认新阵容创建并存档，继续直接恢复，重开返回组队且保留已结算档至确认。schema2添加可选角色配置并校验与实际party匹配；三人UI动态布局/绿色文案，原红蓝奖励池不变。
 - **目录现状偏差（2026-11-16，T001）**：宪法 §3 将场景归 `assets/game/`，但 M0 smoke test 的两张场景实际位于 `assets/scenes/`（T001b 建立的布局，T002/T004 的构建配置已引用该路径）。为避免破坏已验证的三端构建链路，M0 阶段保留此布局；M1 正式实现（T106）时再把场景归位到 `assets/game/`，并同步更新 `builder.json` 构建任务的场景路径。四大分层 `core/`、`platform/{web,wx,win}/`、`game/`、`resources/` 已建齐（T001）。
 
 ## 3. PlatformAdapter 接口（T105 定稿）
@@ -122,6 +123,7 @@ T002 Web 构建产物实测补充（2026-11-09）：
 | FR-17 | `core/` 奖励候选与选牌 | T102 / T104 |
 | FR-18 | `game/GameRoot` 分页与鼠标命中、`game/BattleSelection` 临时选择、`platform/web` 右键菜单抑制；纯 TS 单测与真实鼠标浏览器验收（AC-15~18） | T110 / T109 |
 | FR-19 | `core/state/engine/snapshot/save` 楼层配置/逐层boss/层间保留/schema2迁移，`game` 配置与页面刷新；floors.test.ts、verify-web.js（AC-19~21） | T111 / T109 |
+| FR-20 | `core/team/state/engine/save` 有序队伍配置/校验/初始化；`game/TeamSelection/GameRoot` 会话前选择/继续/重开与三人UI，`GameSession.readSave`只读存档；team-selection.test.ts、verify-web.js（AC-22~24） | T112 / T109 |
 
 > FR-8 ~ FR-17 均为 `core/` 纯 TS 规则（Q-1 玩法设定，spec §1.1/§1.2），由 T102 定义类型、T104 实现确定性推进并补单测、T109 按 AC-7 ~ AC-14 验收。T106 只负责渲染 `Snapshot`，不承载规则。
 
@@ -176,3 +178,5 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-17 | 用户新增鼠标交互需求，插入 T110（FR-18/AC-15~18）并暂停 T109。已实现独立页面/敌左我右/两步选卡/地图左右键/鼠标按钮，新增 BattleSelection 与7条测试（28/28全过）；修正 fitWidth 鼠标命中坐标偏移，右键菜单生命周期在 Web 层。35次鼠标、0次键盘在桌面预览完成一局、读档和重开，0浏览器/HTTP错误，证据 MousePreview-*。实际 Web 包尚未重建，T110 仍未勾选、未提交 |
 | 2026-11-17 | 用户人工验收鼠标交互后要求继续T111。已实现3/4/5层配置（默认3）、非最终boss原子切层、HP/死亡/牌组延续、独立历史地图与schema2/旧单层迁移，Inspector配置及层号UI。新增9条多层测试，共37/37通过。默认3层预览81次鼠标完成各层boss/层间读档/最终胜利REV53/重开，0console/pageerror/HTTP错误，证据FloorsPreview-*；修复START事件穿透。真实Web包待用户重新Build复验，T110/T111尚未提交，T109未执行 |
 | 2026-11-17 | 用户重新Build后T110/T111实包联合复验通过：新Edge会话81次鼠标、0键盘走通默认3层至胜利REV53、层间读档和重开，console/pageerror/HTTP错误0。Floors-AC15-21.json及七张阶段截图记录source=web-build；37/37测试、三端类型/分层/IDE诊断通过。4/5层仅核心测试，不声称Web实测。T110/T111已勾选但未提交，T109未执行 |
+| 2026-11-17 | 用户确认T112：红绿蓝有序选2~3人再进地图，角色不可重复；core/team初始化/校验、TeamSelection/TeamPage、GameSession只读存档检查、确认才保存、继续旧局/重开组队、绿色牌/三人布局已实现。新增12条组队测试，共49/49通过。预览108次鼠标：蓝红两人六牌完整3层通关→重开组队→绿红蓝三人九牌/绿色格挡第三队友/读档，0浏览器/HTTP错误，TeamPreview-*证据。新版Web包待重新Build，T112未勾选/未提交，T109暂停 |
+| 2026-11-17 | T112实包复验通过：用户Build产物16:55:15/46817字节，本机HTTP200；独立Edge会话t112-web执行verify-web.js，返回AC-15~24 WEB PASS/source=web-build。108次鼠标、0键盘验证组队人数/顺序与6/9牌、两人默认3层完整胜利REV53（HP17/30）、重开保留旧档、三人绿色格挡第三队友与继续读档，console/pageerror/HTTP错误0。Team-AC15-24.json及10张Team-*.png保存证据；49/49测试、三端类型/分层/修改源码IDE诊断通过。三人初场战斗/读档为Web实测，三人跨层及4/5层为核心测试；用户现已授权本地提交并继续，T112勾选随本地Git检查点归档（提交主题feat(M1): close T112 - ordered team selection before new runs），不push；下一任务仅T109最终验收 |

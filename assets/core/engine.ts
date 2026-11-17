@@ -4,6 +4,7 @@
 import type { Advance, BuildSnapshot, InitGame } from './contract';
 import { generateMap, hexDistance } from './map';
 import { isFloorCount } from './state';
+import { initialParty } from './team';
 import type { CoreContext, EnemyDef, GameConfig, GameState } from './state';
 import type { GameInput } from './input';
 import type { Snapshot } from './snapshot';
@@ -148,11 +149,8 @@ function makeEnemy(def: EnemyDef): Enemy {
 /** Create the initial state from seed + config (FR-1 / FR-8). */
 export const initGame: InitGame = (config: GameConfig, ctx: CoreContext) => {
     if (!isFloorCount(config.floorCount)) throw new Error('floorCount must be 3, 4 or 5 (1 for legacy runs)');
+    const party = initialParty(config);
     const map = generateMap(config, ctx.rng);
-    const party: Character[] = [
-        { id: 'hero-red', color: 'red', hp: config.startHp, maxHp: config.startHp, block: 0, alive: true },
-        { id: 'hero-blue', color: 'blue', hp: config.startHp, maxHp: config.startHp, block: 0, alive: true },
-    ];
     const instances: CardInstance[] = config.startingDeck.map((defId, i) => ({
         uid: `card-${i}`,
         defId,

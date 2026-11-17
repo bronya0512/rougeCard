@@ -45,6 +45,12 @@ export function isFloorCount(value: unknown): value is FloorCount {
     return value === 1 || value === 3 || value === 4 || value === 5;
 }
 
+export interface CharacterDef {
+    readonly id: string;
+    readonly color: 'red' | 'green' | 'blue';
+    readonly startingDeck: readonly string[];
+}
+
 /** All tunables are configuration. One floor is reserved for legacy saves/tests. */
 export interface GameConfig {
     readonly seed: number;
@@ -63,6 +69,8 @@ export interface GameConfig {
     readonly restNodes: number;
     readonly cardDefs: readonly CardDef[];
     readonly startingDeck: readonly string[];
+    /** Ordered selection; absent only in legacy configuration/saves. */
+    readonly startingParty?: readonly CharacterDef[];
     /** enemies[0] = normal battle enemy; enemies[last] = boss. */
     readonly enemies: readonly EnemyDef[];
 }

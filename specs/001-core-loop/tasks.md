@@ -78,7 +78,13 @@
   存档：schema2，key保持roguecard.save.v1以读取旧档；decodeSaveData校验并迁移完整旧schema1为单层floor1/count1（旧胜利仍胜利），保留原地图/HP/牌组/RNG；不把旧单层升级为中间楼层。新局或重开按Inspector层数开始，损坏元数据回退新局。
   验证：新增9条floors.test.ts，3/4/5层完整核心通关、层间死亡/HP/全牌组/独立地图、五层确定性、boss前后读档/RNG续接、旧map/battle/victory迁移及损坏回退等，共37/37通过；三端adapter类型检查/分层/IDE诊断/脚本语法通过。root tsc仍exit2（既有扩展Editor类型），assets/tests诊断0。默认3层在编辑器预览用81次鼠标、0次键盘走完普通战斗/奖励/各层boss/层间读档→最终胜利REV53（HP17/30）→重开，console/pageerror/HTTP错误0。证据FloorsPreview-AC15-21.json及FloorsPreview-{MapInfo,Battle,SelectedCard,Reward,Floor2,Floor3,Victory}.png。预览5层未执行，5层核心测试已通过。
   实包完成（2026-11-17）：用户Build产物main/index.js时间15:50:31、40518字节，含当前交互/楼层。仅本机静态服务HTTP200，新Edge会话t111-web执行verify-web.js，结果AC-15~21 WEB PASS/source=web-build。81次鼠标、0键盘完成3层及层间读档、最终胜利REV53（HP17/30）、重开；console/pageerror/HTTP错误0、右键菜单被抑制。证据Floors-AC15-21.json及Floors-{MapInfo,Battle,SelectedCard,Reward,Floor2,Floor3,Victory}.png。4/5层仅核心测试通过，本次Web实测为默认3层。T110/T111已勾选；用户已授权创建本次本地Git检查点、不push（按提交主题查找）。T109可开始但本次未执行。
-- [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-21，记录证据，打检查点
+- [x] **T112** 开局角色组队（用户确认红/绿/蓝、2~3人、不可重复且按选择顺序）
+  完成判据：AC-22~24通过；START/重开进入组队，2~3人确认才进地图，6/9张专属起始牌；第三队友/绿色能量与牌正确，读档保留队伍，选人不覆盖存档；旧档/配置红蓝兼容，单测/分层通过，Web重建后验证。
+  已实现（2026-11-17）：core/team.ts校验2~3唯一ID/颜色/专属起始牌，GameConfig.startingParty记录有序角色；初始牌按选择顺序合成、无字段旧配置保持红蓝。TeamSelection红绿蓝可切换取消，TeamPage实时展示站位/6或9牌，不足2人禁确认。GameSession.readSave只读校验迁移；START/结算重开进入选人，未确认不写/清档，继续游戏恢复原阵容。绿色HP30/攻4/格挡3/费用1、每角色2攻1防；三人目标布局、绿色能量/文案生效，奖励池仍红蓝。schema2新增可选角色配置并校验实际party顺序，旧schema1/2缺字段档不追加绿色。
+  验证：新增12条team-selection.test.ts，共49/49测试通过；包含人数/去重/顺序/起始牌、绿色付费/死亡、第三队友格挡、敌人按选择顺序攻击、选人不写档、三人读档/RNG/跨层与旧红蓝兼容。三端adapter编译/分层/IDE诊断/脚本语法通过；root tsc仍exit2（既有扩展错误），assets/tests诊断0。编辑器桌面预览108次鼠标、0键盘：空/1人无法开始→取消与蓝红两人六牌确认→完整3层胜利REV53（HP17/30）→结算返回组队保留旧档→绿红蓝三人九牌→绿色格挡施放给第三位蓝色角色→继续读档保持阵容/牌/进度；浏览器及HTTP错误0。证据TeamPreview-AC15-24.json与TeamPreview-*.png。三人本次预览验证初场战斗/读档，未声称三人完整3层通关。
+  实包验证通过（2026-11-17）：用户重新Build，build/web-desktop/assets/main/index.js时间16:55:15、46817字节；本机静态服务http://127.0.0.1:8123/返回HTTP200。独立Edge会话t112-web执行verify-web.js（Get-Content -Raw -Encoding UTF8后playwright-cli run-code），结果AC-15~24 WEB PASS/source=web-build。108次真实鼠标、0键盘：空/1人禁开始、取消/去重、有序蓝红两人六牌→默认3层完整胜利REV53（HP17/30）与层间读档→重开组队保留旧档→绿红蓝三人九牌、绿色能量付费/格挡施放第三位蓝色队友→继续读档保持队伍/牌/进度；console/pageerror/HTTP错误0，画布右键菜单抑制通过。证据Team-AC15-24.json及Team-{Selection,MapInfo,Battle,SelectedCard,Reward,Floor2,Floor3,Victory,ThreeSelected,ThreeBattle}.png；原始日志temp/t112-web-browser.log。49/49测试及三端adapter类型检查复跑通过（temp/t112-web-tests.log），分层检查、修改源码IDE诊断、git diff --check通过。
+  验证边界：实包完整通关为两人默认3层；三人实包验证初场战斗/读档，三人跨层和4/5层由核心测试覆盖，不声称三人或4/5层Web完整通关。AC-22~24已有单测与实包证据；用户现已授权本地提交并继续，T112勾选随本地Git检查点归档（提交主题feat(M1): close T112 - ordered team selection before new runs），不push。提交前49/49及三端adapter类型检查再次通过（temp/t109-tests.log）；接续仅T109最终验收，不实现其他任务。
+- [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-24，记录证据，打检查点
   完成判据：全部验收项有证据；未通过项转为新 task 而非直接勾选。
 
 ## M2 / M3 / M4（backlog，M1 验收后再拆细）

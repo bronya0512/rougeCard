@@ -3,28 +3,13 @@ import {
     input, Input, KeyCode, Label, Layers, Node, UITransform, Vec3,
 } from 'cc';
 import { hexDistance } from '../core';
-import type { CardDef, GameConfig, GameInput, HexCoord, MapNode, Snapshot, StoragePort } from '../core';
+import type { CardDef, GameInput, HexCoord, MapNode, SaveData, Snapshot, StoragePort } from '../core';
 import { BattleSelection } from './BattleSelection';
 import type { BattleTarget } from './BattleSelection';
 import { GameSession } from './GameSession';
+import { TeamSelection, TEAM_ROSTER } from './TeamSelection';
 
 const { ccclass, property } = _decorator;
-
-function defaultConfig(seed: number, floorCount: number): GameConfig {
-    if (floorCount !== 3 && floorCount !== 4 && floorCount !== 5) throw new Error('层数必须是3、4或5');
-    return {
-        seed, floorCount, mapRadius: 2, startHp: 30, energyPerTurn: 1, drawPerTurn: 5,
-        restHeal: 10, rewardCount: 3, restNodes: 1,
-        cardDefs: [
-            { id: 'r-atk', name: 'Red Strike', color: 'red', cost: 1, effect: { kind: 'attack', damage: 4 } },
-            { id: 'r-def', name: 'Red Guard', color: 'red', cost: 1, effect: { kind: 'defend', block: 3 } },
-            { id: 'b-atk', name: 'Blue Strike', color: 'blue', cost: 1, effect: { kind: 'attack', damage: 4 } },
-            { id: 'b-def', name: 'Blue Guard', color: 'blue', cost: 1, effect: { kind: 'defend', block: 3 } },
-        ],
-        startingDeck: ['r-atk', 'b-atk', 'r-def', 'b-def', 'r-atk', 'b-atk'],
-        enemies: [{ id: 'normal', hp: 12, damage: 3 }, { id: 'boss', hp: 24, damage: 5 }],
-    };
-}
 
 const C = {
     bg: new Color(17, 23, 34), panel: new Color(28, 39, 55),
@@ -45,6 +30,14 @@ export class GameRoot extends Component {
     private session!: GameSession;
     private storage!: StoragePort;
     private readonly selection = new BattleSelection();
+    private readonly teamSelection = new TeamSelection();
+    private choosingTeam = true;
+    private pendingSave: SaveData | null = null;
+    private teamPage!: Node;
+    private readonly rosterCards: Panel[] = [];
+    private teamSummary!: Label;
+    private confirmTeam!: Panel;
+    private continueRun!: Panel;
     private mapPage!: Node;
     private battlePage!: Node;
     private rewardPage!: Node;
@@ -84,7 +77,7 @@ export class GameRoot extends Component {
         input.off(Input.EventType.MOUSE_UP, this.onMouse, this);
         input.off(Input.EventType.KEY_DOWN, this.onKey, this);
         this.selection.cancel();
-        for (const node of [this.mapPage, this.battlePage, this.rewardPage, this.settlementPage,
+        for (const node of [this.teamPage, this.mapPage, this.battlePage, this.rewardPage, this.settlementPage,
             this.headerLabel.node, this.hintLabel.node, this.node.getChildByName('GameBg')]) {
             if (node !== null) node.destroy();
         }
@@ -92,10 +85,40 @@ export class GameRoot extends Component {
 
     configure(storage: StoragePort): void {
         this.storage = storage;
-        this.session = GameSession.load(storage, defaultConfig(20261116, this.floorCount));
-        this.session.save();
+        this.openTeam();
+    }
+
+    private openTeam(): void {
+        this.pendingSave = GameSession.readSave(this.storage);
+        this.teamSelection.reset();
         this.selection.cancel();
+        this.choosingTeam = true;
+        this.feedback = '';
+        this.render();
+    }
+
+    private beginTeam(): void {
+        if (!this.teamSelection.canConfirm) return;
+        const config = this.teamSelection.createConfig(20261116, this.floorCount);
+        const session = new GameSession(config, { storage: this.storage });
+        session.save();
+        this.session = session;
+        this.enterSession();
+    }
+
+    private continueSaved(): void {
+        if (this.pendingSave === null) return;
+        this.session = new GameSession(this.pendingSave.state.config, { storage: this.storage, restored: this.pendingSave });
+        this.enterSession();
+    }
+
+    private enterSession(): void {
+        this.choosingTeam = false;
+        this.pendingSave = null;
         this.lastFloor = 0;
+        this.lastPhase = null;
+        this.selection.cancel();
+        this.feedback = '';
         this.render();
     }
 
@@ -153,6 +176,14 @@ export class GameRoot extends Component {
         this.headerLabel = this.label('Header', this.node, 0, 312, 1180, 42, '', 26);
         this.hintLabel = this.label('Hint', this.node, -100, -320, 980, 40, '', 17);
         this.hintLabel.color = C.gold;
+        this.teamPage = this.createNode('TeamPage', this.node, 0, 0, 1280, 720);
+        this.label('TeamTitle', this.teamPage, 0, 245, 1100, 48, '选择 2～3 名角色 · 组成你的队伍', 28);
+        for (let i = 0; i < TEAM_ROSTER.length; i += 1) {
+            this.rosterCards.push(this.panel(`Roster_${i}`, this.teamPage, (i - 1) * 300, 40, 260, 290, '', 22));
+        }
+        this.teamSummary = this.label('TeamSummary', this.teamPage, 0, -165, 1160, 75, '', 22);
+        this.confirmTeam = this.panel('ConfirmTeam', this.teamPage, 190, -255, 320, 56, '确认队伍 · 进入地图', 22);
+        this.continueRun = this.panel('ContinueRun', this.teamPage, -190, -255, 320, 56, '继续游戏', 22);
         this.mapBoard = this.createNode('MapBoard', this.mapPage, -190, 0, 660, 550);
         this.label('Legend', this.mapPage, -190, 260, 660, 36, '金色 · 当前位置    蓝色 · 战斗    绿色 · 休息    红色 · BOSS', 17);
         this.mapInfo = this.panel('NodeInfo', this.mapPage, 410, 60, 320, 340, '', 21);
@@ -160,8 +191,8 @@ export class GameRoot extends Component {
         this.label('SideEnemy', this.battlePage, -390, 258, 300, 40, '敌 方', 24);
         this.label('SideParty', this.battlePage, 375, 258, 420, 40, '我 方', 24);
         this.enemy = this.panel('EnemyTarget', this.battlePage, -390, 100, 250, 235, '', 24);
-        for (let i = 0; i < 2; i += 1) {
-            this.heroes.push(this.panel(`HeroTarget_${i}`, this.battlePage, 255 + i * 230, 100, 205, 235, '', 22));
+        for (let i = 0; i < 3; i += 1) {
+            this.heroes.push(this.panel(`HeroTarget_${i}`, this.battlePage, 150 + i * 185, 100, 175, 235, '', 20));
         }
         this.energyLabel = this.label('Energy', this.battlePage, 0, -45, 1160, 36, '', 19);
         this.handLabel = this.label('Hand', this.battlePage, -400, -80, 310, 26, '', 15);
@@ -230,15 +261,53 @@ export class GameRoot extends Component {
             this.paint(this.mapInfo, C.panel, C.gold);
         }
         this.mapParty.label.string = '队伍状态\n' + s.party.map(hero =>
-            `${hero.color === 'red' ? '红' : '蓝'}  ${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}`).join('\n');
+            `${this.colorName(hero.color)}  ${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}`).join('\n');
     }
 
     private cardText(card: CardDef): string {
         const effect = card.effect.kind === 'attack' ? `造成 ${card.effect.damage} 点伤害` : `获得 ${card.effect.block} 点格挡`;
-        return `${card.name}\n\n${card.color === 'red' ? '红色' : '蓝色'}能量  ${card.cost}\n\n${effect}`;
+        return `${card.name}\n\n${this.colorName(card.color)}色能量  ${card.cost}\n\n${effect}`;
+    }
+
+    private colorName(color: CardDef['color']): string {
+        return { red: '红', green: '绿', blue: '蓝', white: '白' }[color];
+    }
+
+    private colorTint(color: CardDef['color']): Color {
+        return color === 'red' ? C.red : color === 'green' ? C.green : color === 'blue' ? C.blue : C.text;
+    }
+
+    private renderTeam(): void {
+        const ids = this.teamSelection.selectedIds;
+        this.headerLabel.string = '开局组队   /   TEAM';
+        this.hintLabel.string = '左键选择 / 取消 · 按选择顺序站位，第一位优先承受攻击';
+        for (let i = 0; i < TEAM_ROSTER.length; i += 1) {
+            const hero = TEAM_ROSTER[i]!;
+            const panel = this.rosterCards[i]!;
+            const index = ids.indexOf(hero.id);
+            panel.label.string = `${this.colorName(hero.color)}色角色\n\nHP 30 · ${this.colorName(hero.color)}能量 1 / 回合\n\n起始牌：攻击 ×2 · 防御 ×1\n攻击 4 · 格挡 3 · 费用 1\n\n${index >= 0 ? `已选 · 站位 ${index + 1}` : '左键加入队伍'}`;
+            this.paint(panel, C.panel, index >= 0 ? C.gold : this.colorTint(hero.color), index >= 0);
+        }
+        const names = ids.map(id => this.colorName(TEAM_ROSTER.find(hero => hero.id === id)!.color));
+        this.teamSummary.string = ids.length === 0 ? '尚未选择角色 · 至少选择 2 名'
+            : `站位顺序：${names.join(' → ')}\n${ids.length} 名角色 · ${ids.length * 3} 张起始牌${this.teamSelection.canConfirm ? '' : ' · 还需选择一名'}`;
+        this.confirmTeam.label.string = this.teamSelection.canConfirm
+            ? this.pendingSave === null ? '确认队伍 · 进入地图' : '确认新局 · 替换旧存档' : '至少选择 2 名角色';
+        this.paint(this.confirmTeam, this.teamSelection.canConfirm ? new Color(45, 71, 62) : C.muted,
+            this.teamSelection.canConfirm ? C.green : C.line);
+        this.continueRun.node.active = this.pendingSave !== null;
+        if (this.pendingSave !== null) {
+            this.continueRun.label.string = `继续游戏 · 第 ${this.pendingSave.state.floor} 层`;
+        }
     }
 
     private render(): void {
+        this.teamPage.active = this.choosingTeam;
+        if (this.choosingTeam) {
+            for (const page of [this.mapPage, this.battlePage, this.rewardPage, this.settlementPage]) page.active = false;
+            this.renderTeam();
+            return;
+        }
         const s = this.session.snapshot;
         if (s.floor !== this.lastFloor) {
             this.buildMap(s);
@@ -294,13 +363,14 @@ export class GameRoot extends Component {
             const panel = this.heroes[i]!;
             panel.node.active = hero !== undefined;
             if (hero === undefined) continue;
-            const color = hero.color === 'red' ? C.red : C.blue;
+            const color = this.colorTint(hero.color);
+            panel.node.setPosition(s.party.length === 2 ? 255 + i * 230 : 150 + i * 185, 100);
             const target = hero.alive && selected?.def.effect.kind === 'defend';
-            panel.label.string = `${hero.color === 'red' ? '红色角色' : '蓝色角色'}\n\n${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}\n\n${hero.alive ? '点击可作为防御目标' : '不再产出能量'}`;
+            panel.label.string = `${this.colorName(hero.color)}色角色\n\n${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}\n\n${hero.alive ? '点击可作为防御目标' : '不再产出能量'}`;
             this.paint(panel, hero.alive ? C.panel : C.muted, target ? C.gold : color, target);
         }
         const e = s.energy;
-        this.energyLabel.string = `可用能量   红 ${e.red}   蓝 ${e.blue}   白 ${e.white}     ·     选牌后点击怪物 / 队友`;
+        this.energyLabel.string = `可用能量   红 ${e.red}   绿 ${e.green}   蓝 ${e.blue}   白 ${e.white}     ·     选牌后点击怪物 / 队友`;
         this.handLabel.string = `手牌 ${s.hand.length}   抽牌 ${s.drawCount}   弃牌 ${s.discardCount}`;
         while (this.handCards.length < s.hand.length) {
             this.handCards.push(this.panel(`HandCard_${this.handCards.length}`, this.battlePage, 0, -198, 176, 190, '', 18));
@@ -316,7 +386,7 @@ export class GameRoot extends Component {
             panel.label.string = this.cardText(card.def) + `\n\n${chosen ? '已选择 · 点击目标' : card.playable ? '左键选择' : '能量不足'}`;
             panel.label.color = card.playable ? C.text : C.dim;
             this.paint(panel, card.playable ? C.panel : C.muted, chosen ? C.gold
-                : card.playable ? card.def.color === 'red' ? C.red : C.blue : C.line, chosen);
+                : card.playable ? this.colorTint(card.def.color) : C.line, chosen);
         }
         this.cancelButton.node.active = this.selection.selectedUid !== null;
         this.paint(this.endTurn, new Color(45, 71, 62), C.green);
@@ -351,14 +421,7 @@ export class GameRoot extends Component {
     private restart(): void {
         const phase = this.session.snapshot.phase;
         if (phase !== 'victory' && phase !== 'defeat') return;
-        this.session.clearSave();
-        this.session = new GameSession(defaultConfig(20261116, this.floorCount), { storage: this.storage });
-        this.session.save();
-        this.selection.cancel();
-        this.infoCoord = null;
-        this.feedback = '';
-        this.buildMap(this.session.snapshot);
-        this.render();
+        this.openTeam();
     }
 
     private hit(node: Node, point: Vec3): boolean {
@@ -383,12 +446,24 @@ export class GameRoot extends Component {
     }
 
     private onMouse(event: EventMouse): void {
-        if (this.session === undefined || !this.enabledInHierarchy) return;
+        if (!this.enabledInHierarchy) return;
         const location = event.getLocation();
         const camera = this.node.getComponent(Canvas)?.cameraComponent;
         if (camera === null || camera === undefined) return;
         const point = camera.screenToWorld(new Vec3(location.x, location.y, 0));
         point.z = 0;
+        if (this.choosingTeam) {
+            if (event.getButton() !== EventMouse.BUTTON_LEFT) return;
+            for (let i = 0; i < this.rosterCards.length; i += 1) {
+                if (this.hit(this.rosterCards[i]!.node, point)) {
+                    this.teamSelection.toggle(TEAM_ROSTER[i]!.id); this.render(); return;
+                }
+            }
+            if (this.hit(this.confirmTeam.node, point)) this.beginTeam();
+            else if (this.hit(this.continueRun.node, point)) this.continueSaved();
+            return;
+        }
+        if (this.session === undefined) return;
         const s = this.session.snapshot;
         if (s.phase === 'map') {
             const coord = this.mapHit(point);
@@ -426,7 +501,7 @@ export class GameRoot extends Component {
     }
 
     private onKey(event: EventKeyboard): void {
-        if (this.session === undefined) return;
+        if (this.choosingTeam || this.session === undefined) return;
         const s = this.session.snapshot;
         const directions: { [key: number]: HexCoord } = {
             [KeyCode.ARROW_UP]: { q: 0, r: -1 }, [KeyCode.ARROW_DOWN]: { q: 0, r: 1 },

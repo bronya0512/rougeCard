@@ -58,21 +58,20 @@ export class GameSession {
      * missing, malformed, or version-mismatched data (Q-3: no encryption,
      * structural guard only).
      */
-    static load(storage: StoragePort, config: GameConfig, now?: () => number): GameSession {
+    static readSave(storage: StoragePort): SaveData | null {
         const raw = storage.get(SAVE_KEY);
-        if (raw !== null) {
-            try {
-                const parsed: unknown = JSON.parse(raw);
-                const restored = decodeSaveData(parsed);
-                if (restored !== null) {
-                    return new GameSession(config, { storage, restored, now });
-                }
-            } catch {
-                // corrupted JSON: discard below
-            }
-            storage.remove(SAVE_KEY);
+        if (raw === null) return null;
+        try {
+            return decodeSaveData(JSON.parse(raw));
+        } catch {
+            return null;
         }
-        return new GameSession(config, { storage, now });
+    }
+
+    static load(storage: StoragePort, config: GameConfig, now?: () => number): GameSession {
+        const restored = GameSession.readSave(storage);
+        if (restored === null) storage.remove(SAVE_KEY);
+        return new GameSession(config, { storage, restored, now });
     }
 
     /** Serialize current state + RNG state into storage (Q-8: save on every op). */

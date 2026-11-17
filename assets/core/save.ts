@@ -1,4 +1,6 @@
 import { isFloorCount } from './state';
+import { isStartingParty } from './team';
+import type { CardDef } from './types';
 import type { GameState } from './state';
 import { hexDistance } from './map';
 
@@ -79,6 +81,12 @@ function validState(value: unknown): value is GameState {
         && typeof hero.id === 'string' && ['red', 'green', 'blue'].some(color => color === hero.color)
         && nonnegative(hero.hp) && nonnegative(hero.maxHp) && hero.hp <= hero.maxHp
         && nonnegative(hero.block) && hero.alive === (hero.hp > 0))) return false;
+    if (config.startingParty !== undefined) {
+        if (!isStartingParty(config.startingParty, { cardDefs: config.cardDefs as CardDef[], startingDeck: config.startingDeck as string[] })) return false;
+        const party = value.party;
+        if (config.startingParty.length !== party.length
+            || !config.startingParty.every((hero, i) => hero.id === party[i].id && hero.color === party[i].color)) return false;
+    }
     const energy = value.energy;
     if (!object(energy) || !['red', 'green', 'blue', 'white'].every(color => nonnegative(energy[color]))
         || !object(value.deck) || !Array.isArray(value.rewardCandidates)

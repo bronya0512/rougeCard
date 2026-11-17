@@ -10,3 +10,4 @@ export * from './rng';
 export * from './map';
 export * from './engine';
 export * from './platform';
+export * from './team';
