@@ -3,9 +3,9 @@
     Serve the Web/H5 build locally for browser verification.
 
 .DESCRIPTION
-    Starts a local static server for build/web-desktop using the verified Python
-    from T002 (C:\Python313\python.exe). Use this together with playwright-cli
-    (msedge) to verify the StartMenu renders and the START button navigates.
+    Starts a loopback-only static server for build/web-desktop using the verified
+    Python from T002 (C:\Python313\python.exe). Use this together with
+    playwright-cli (msedge) to verify the built demo's full game flow.
 
 .PARAMETER Port
     HTTP port. Default 8123 (matches plan.md section 4).
@@ -40,4 +40,4 @@ if (-not (Test-Path $Python)) {
 
 Write-Host "[serve-web] Serving $webDir at http://127.0.0.1:$Port/"
 Write-Host '[serve-web] Press Ctrl+C to stop.'
-& $Python -m http.server $Port --directory $webDir
+& $Python -m http.server $Port --bind 127.0.0.1 --directory $webDir

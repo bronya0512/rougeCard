@@ -1,0 +1,259 @@
+﻿{
+    "result":  "AC-2 PASS",
+    "url":  "http://127.0.0.1:8123/",
+    "viewport":  {
+                     "width":  1280,
+                     "height":  1080
+                 },
+    "inputCount":  15,
+    "errors":  [
+
+               ],
+    "httpErrors":  [
+
+                   ],
+    "finalPhase":  "victory",
+    "finalRevision":  17,
+    "trace":  [
+                  {
+                      "key":  "START",
+                      "phase":  "map",
+                      "revision":  0,
+                      "turn":  0,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  0
+                                   },
+                      "enemyHp":  null,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "ArrowUp",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "turn":  1,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -1
+                                   },
+                      "enemyHp":  12,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "turn":  1,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -1
+                                   },
+                      "enemyHp":  8,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "battle",
+                      "revision":  4,
+                      "turn":  1,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -1
+                                   },
+                      "enemyHp":  4,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "Space",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "turn":  2,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -1
+                                   },
+                      "enemyHp":  4,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "1",
+                      "phase":  "reward",
+                      "revision":  6,
+                      "turn":  0,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -1
+                                   },
+                      "enemyHp":  null,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "map",
+                      "revision":  7,
+                      "turn":  0,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -1
+                                   },
+                      "enemyHp":  null,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "ArrowUp",
+                      "phase":  "battle",
+                      "revision":  9,
+                      "turn":  1,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  24,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "battle",
+                      "revision":  10,
+                      "turn":  1,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  20,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "battle",
+                      "revision":  11,
+                      "turn":  1,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  16,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "Space",
+                      "phase":  "battle",
+                      "revision":  12,
+                      "turn":  2,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  16,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "1",
+                      "phase":  "battle",
+                      "revision":  13,
+                      "turn":  2,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  12,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "battle",
+                      "revision":  14,
+                      "turn":  2,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  8,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "Space",
+                      "phase":  "battle",
+                      "revision":  15,
+                      "turn":  3,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  8,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "battle",
+                      "revision":  16,
+                      "turn":  3,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  4,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ]
+                  },
+                  {
+                      "key":  "2",
+                      "phase":  "victory",
+                      "revision":  17,
+                      "turn":  0,
+                      "position":  {
+                                       "q":  0,
+                                       "r":  -2
+                                   },
+                      "enemyHp":  null,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ]
+                  }
+              ]
+}

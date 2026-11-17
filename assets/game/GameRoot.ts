@@ -207,6 +207,17 @@ export class GameRoot extends Component {
     }
 
     private renderHand(s: Snapshot): string {
+        if (s.phase === 'reward') {
+            const choices = s.rewardCandidates.map((card, i) => {
+                const effect = card.effect.kind === 'attack'
+                    ? `attack ${card.effect.damage}`
+                    : `block ${card.effect.block}`;
+                return `${i + 1}: ${card.name} [${card.color} ${card.cost}] ${effect}`;
+            });
+            return 'CHOOSE ONE REWARD\n' + choices.join('   |   ');
+        }
+        if (s.phase === 'victory') return 'VICTORY: boss defeated. Press R to start a new run.';
+        if (s.phase === 'defeat') return 'DEFEAT: no surviving teammates. Press R to try again.';
         if (s.hand.length === 0) return 'HAND: (empty)   draw:' + s.drawCount + ' discard:' + s.discardCount;
         const cards = s.hand.map((c, i) => `${i + 1}:${c.def.name}[${c.def.color} ${c.def.cost}]${c.playable ? '' : '!'}`);
         return 'HAND ' + cards.join('  ') + '   draw:' + s.drawCount + ' discard:' + s.discardCount;
