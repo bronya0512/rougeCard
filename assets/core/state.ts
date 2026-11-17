@@ -32,6 +32,13 @@ export interface CoreContext {
     readonly rng: Rng;
 }
 
+/** Enemy template. enemies[0] = normal battle, enemies[last] = boss (M1). */
+export interface EnemyDef {
+    readonly id: string;
+    readonly hp: number;
+    readonly damage: number;
+}
+
 /** All tunables are configuration (spec 1.2 / FR-8~17). */
 export interface GameConfig {
     readonly seed: number;
@@ -45,9 +52,12 @@ export interface GameConfig {
     readonly restHeal: number;
     /** Number of candidate cards offered after a battle. */
     readonly rewardCount: number;
+    /** Number of rest nodes on the map (boss excluded). */
+    readonly restNodes: number;
     readonly cardDefs: readonly CardDef[];
     readonly startingDeck: readonly string[];
-    readonly enemies: readonly { readonly id: string; readonly hp: number }[];
+    /** enemies[0] = normal battle enemy; enemies[last] = boss. */
+    readonly enemies: readonly EnemyDef[];
 }
 
 /** Cards in the various zones of the shared deck. */

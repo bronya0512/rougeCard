@@ -22,9 +22,13 @@ function makeConfig(seed: number): GameConfig {
         drawPerTurn: 5,
         restHeal: 10,
         rewardCount: 3,
+        restNodes: 1,
         cardDefs: [],
         startingDeck: [],
-        enemies: [{ id: 'boss-1', hp: 40 }],
+        enemies: [
+            { id: 'normal-1', hp: 20, damage: 3 },
+            { id: 'boss-1', hp: 40, damage: 5 },
+        ],
     };
 }
 

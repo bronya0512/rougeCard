@@ -118,7 +118,7 @@ T002 Web 构建产物实测补充（2026-11-09）：
 | 编号 | 风险 | 验证时机 | 结论 |
 |---|---|---|---|
 | R-1 | 构建链路跑不通，架构假设不成立 | M0（T002–T004） | **通过（宪法 v0.2 口径）**：M0 阻塞判据为 Web + Windows 两端——Web 实包构建 + 浏览器运行 + 输入与场景切换通过（T002）；Windows 构建 + exe 启动 + StartMenu 显示与点击跳转通过（T004，用户真实桌面验收）。微信小游戏构建产物已生成（验证单一工程多端打包可行），真机/上架验证因版号合规延后（T003，不计入 M0 阻塞）。宪法 C-2/C-3 未被证伪 |
-| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001）/ M1（T102） | **部分验证，风险降低但未关闭**：T102 已写入首批纯 TS 类型模型（`assets/core/` 7 模块，无 `cc` import），用 Cocos 内置 tsc `--strict --skipLibCheck` 检查 exit=0、编译为 CJS 后 node 可引用 → 类型层面与 TS 工具链兼容。但尚未参与真实 Cocos 游戏构建/打包（game/ 组件订阅 Snapshot 在 T106），打包器兼容性待 T106 接入后验证。根 `tsconfig.json` 的 `strict: false` 已改回 `true`（对齐宪法 C-1） |
+| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001）/ M1（T102/T104） | **逻辑层已验证，打包器兼容仍待 T106**：T102 写入 7 个纯 TS 类型模块、T104 实现完整推进引擎（共 10 个 core 模块，无 `cc`/平台 import），Cocos 内置 tsc `--strict` 编译 exit=0、CJS 编译后 node 可引用、16/16 单测通过 → 类型与逻辑层完全兼容 TS 工具链。但尚未参与真实 Cocos 游戏构建/打包（game/ 组件订阅 Snapshot 在 T106），打包器兼容性待 T106 接入后验证。根 `tsconfig.json` 的 `strict: false` 已改回 `true`（对齐宪法 C-1） |
 | R-3 | 微信小游戏首包体积与分包策略 | M2 | `[待回填]` |
 | R-4 | Windows 包与 Steamworks SDK 的集成方式 | M3 | `[待回填]` |
 | R-5 | task 粒度过大，无法独立验证导致 spec 流程失效 | 全程 | 约束：单 task 估时 ≤ 半天 |
@@ -156,3 +156,4 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-16 | T101 完成并勾选：Q-1 已确认关闭；`plan.md` §5 映射同步——补 FR-8~FR-17 共 10 条 core 规则映射、头部关联扩到 FR-1~17/AC-1~14、T109 验收范围同步 |
 | 2026-11-16 | T102 完成并勾选：`assets/core/` 新增 7 个纯 TS 类型模块（GameState/GameInput/Snapshot/SaveData/契约签名），无引擎/平台 import；Cocos tsc `--strict` 检查 exit=0、CJS 编译后 node 可引用；根 `tsconfig.json` `strict:false`→`true` 对齐宪法 C-1；§6 R-2 更新为部分验证、风险降低待 T106 打包验证 |
 | 2026-11-16 | T103 完成并勾选：单测框架定稿为零依赖 `node:test` + Cocos 内置 tsc 预编译（回填 §1）；新增 `build/scripts/test-core.ps1` 可重复命令与 `tests/core/init.test.ts` 首个用例（3 用例全过） |
+| 2026-11-16 | T104 完成并勾选：`assets/core/` 新增 rng/map/engine 三个实现模块，落地 initGame/advance/buildSnapshot 全部 FR 规则；GameConfig 扩展 restNodes+EnemyDef；`tests/core/engine.test.ts` 13 用例覆盖 AC-7~14/FR-4/FR-16 + 判据两条；strict 编译 12 TS 通过、16/16 全过；§6 R-2 更新为逻辑层已验证、打包器待 T106 |
