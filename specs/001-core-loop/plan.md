@@ -84,6 +84,8 @@ M0 实测（2026-11-09，通过 cocos-mcp-server）：
 - **三端启动/服务脚本**：`run-windows.ps1`（data 链接 + 启动 exe，T004b）、`serve-web.ps1`（封装 T002 验证的 `C:\Python313\python.exe -m http.server 8123`，实测 HTTP 200）。微信端无脚本，按上表在微信开发者工具导入。
 - **人工步骤不可消除**：构建本身仍须在编辑器 Build 面板点选（MCP 无法配置构建参数，R-6）；恢复配置后打开编辑器，确认三任务的启动场景为 `StartMenu`（windows 任务曾被错配为 `Placeholder`，见 T004）。真实"可重复"= 模板恢复配置 + 脚本启动验证 + Build 面板点 Build 三步。
 
+T106 核心玩法画面实测（2026-11-17，Cocos 预览 + playwright-cli/Edge）：启动预览（`project_run_project`，URL `http://127.0.0.1:7456/`），点击 START（canvas 内命中点约 (592,400)，M0 记录 GameDiv 1280×960 有坐标偏移）→ `[StartMenu] start clicked - booting core game` → GameRoot 动态建 UI。方向键移动两格进入战斗，画面实时显示：六边形地图（金=当前/蓝=战斗/绿=休息/红=boss）、PARTY（红/蓝 hp 30/30、能量 r1 b1）、ENEMY normal hp 12/12 intent attack 3、HAND 5 张牌、顶部阶段/回合/rev、底部操作提示。**0 console 错误**，证明输入→core.advance→Snapshot→渲染链路打通。证据 `specs/001-core-loop/CoreGame-Battle.png`。注意：这是编辑器预览验证；真实 Web 构建产物由 T108 验证。
+
 T002 Web 构建产物实测补充（2026-11-09）：
 
 - 产物 `src/settings.json`：`launchScene = db://assets/scenes/StartMenu.scene`、`designResolution = 1280×720 / policy 4`、`engine.debug = false`；`assets/main/config.json` 的 `scenes` 同时含 StartMenu 与 Placeholder，证明构建面板配置生效。
@@ -120,7 +122,7 @@ T002 Web 构建产物实测补充（2026-11-09）：
 | 编号 | 风险 | 验证时机 | 结论 |
 |---|---|---|---|
 | R-1 | 构建链路跑不通，架构假设不成立 | M0（T002–T004） | **通过（宪法 v0.2 口径）**：M0 阻塞判据为 Web + Windows 两端——Web 实包构建 + 浏览器运行 + 输入与场景切换通过（T002）；Windows 构建 + exe 启动 + StartMenu 显示与点击跳转通过（T004，用户真实桌面验收）。微信小游戏构建产物已生成（验证单一工程多端打包可行），真机/上架验证因版号合规延后（T003，不计入 M0 阻塞）。宪法 C-2/C-3 未被证伪 |
-| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001）/ M1（T102/T104） | **逻辑层已验证，打包器兼容仍待 T106**：T102 写入 7 个纯 TS 类型模块、T104 实现完整推进引擎（共 10 个 core 模块，无 `cc`/平台 import），Cocos 内置 tsc `--strict` 编译 exit=0、CJS 编译后 node 可引用、16/16 单测通过 → 类型与逻辑层完全兼容 TS 工具链。但尚未参与真实 Cocos 游戏构建/打包（game/ 组件订阅 Snapshot 在 T106），打包器兼容性待 T106 接入后验证。根 `tsconfig.json` 的 `strict: false` 已改回 `true`（对齐宪法 C-1） |
+| R-2 | 纯 TS `core/` 与 Cocos `tsconfig` / 打包器冲突 | M0（T001）/ M1（T102/T104/T106） | **已验证通过**：T102/T104 写入纯 TS 类型与引擎（无 `cc`/平台 import），T106 由 `GameSession`/`GameRoot` 在真实 Cocos 预览中接入——cc 脚本编译无错、浏览器渲染地图/队伍/敌人/手牌、键盘输入经 core.advance 实时更新 Snapshot，0 console 错误（截图 `CoreGame-Battle.png`）。Cocos 项目 tsc `--noEmit --skipLibCheck` 项目代码 0 错误、16/16 core 单测通过。根 `tsconfig.json` `strict: true`（对齐宪法 C-1）。注：M1 仅预览验证，真实三端构建产物由 T108（Web）/后续打包验证 |
 | R-3 | 微信小游戏首包体积与分包策略 | M2 | `[待回填]` |
 | R-4 | Windows 包与 Steamworks SDK 的集成方式 | M3 | `[待回填]` |
 | R-5 | task 粒度过大，无法独立验证导致 spec 流程失效 | 全程 | 约束：单 task 估时 ≤ 半天 |
@@ -160,3 +162,4 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-16 | T103 完成并勾选：单测框架定稿为零依赖 `node:test` + Cocos 内置 tsc 预编译（回填 §1）；新增 `build/scripts/test-core.ps1` 可重复命令与 `tests/core/init.test.ts` 首个用例（3 用例全过） |
 | 2026-11-16 | T104 完成并勾选：`assets/core/` 新增 rng/map/engine 三个实现模块，落地 initGame/advance/buildSnapshot 全部 FR 规则；GameConfig 扩展 restNodes+EnemyDef；`tests/core/engine.test.ts` 13 用例覆盖 AC-7~14/FR-4/FR-16 + 判据两条；strict 编译 12 TS 通过、16/16 全过；§6 R-2 更新为逻辑层已验证、打包器待 T106 |
 | 2026-11-16 | T105 完成并勾选：`assets/core/platform.ts` 定稿 PlatformAdapter 五端口契约；`assets/platform/{web,wx,win}/index.ts` 三端实现（Web 真实 Storage+Input，wx/win 空实现）；修复 T104 Array.includes→indexOf（ES2015）；test-core.ps1 追加三端类型检查；plan §3 接口草案→定稿 |
+| 2026-11-17 | T106 完成并勾选：`assets/game/GameSession.ts`（state 仅经 core.advance 变更）+ `GameRoot.ts`（动态 UI 渲染 Snapshot + 键盘输入转发）；StartMenu 点击 START 动态挂载；新增 check-layering.ps1（AC-4 + dispatch-only 检查）。Cocos 预览 + Edge 实测 START→移动→战斗画面渲染、0 console 错误，截图 CoreGame-Battle.png 入库；Q-2 未改；§6 R-2 更新为已验证通过 |

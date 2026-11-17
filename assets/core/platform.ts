@@ -35,12 +35,12 @@ export interface AudioPort {
     setVolume(volume: number): void;
 }
 
-/** Achievement port (M1: no-op; Steamworks in M3). */
+/** Achievement port (M1: no-op; native platform SDK in M3). */
 export interface AchievementPort {
     unlock(id: string): void;
 }
 
-/** Share payload and port (M1: no-op; wx.shareAppMessage in M2). */
+/** Share payload and port (M1: no-op; native share binding in M2). */
 export interface SharePayload {
     readonly title: string;
     readonly description?: string;
