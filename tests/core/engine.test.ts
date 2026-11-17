@@ -82,22 +82,108 @@ test('AC-7: ten different seeds do not all produce the same map', () => {
 });
 
 // ---- AC-8: movement ----
-test('AC-8: non-adjacent move rejected; battle move rejected; visited does not retrigger', () => {
-    const init = start(2);
-    const far = { q: 2, r: 0 };
-    const bad = stepTo(init.state, far, makeCtx(2));
+test('AC-8: non-adjacent and battle moves reject without changing state, revision or RNG', () => {
+    const rng = createSeededRng(2);
+    const ctx: CoreContext = { clock: createFixedClock(0), rng };
+    const init = initGame(makeConfig(2), ctx);
+    const initialData = JSON.stringify(init.state);
+    const initialRng = rng.getState();
+    const bad = stepTo(init.state, { q: 2, r: 0 }, ctx);
     assert.ok(bad.snapshot.lastRejection !== null);
     assert.equal(bad.state, init.state);
+    assert.equal(bad.state.revision, init.state.revision);
+    assert.equal(JSON.stringify(init.state), initialData);
+    assert.equal(rng.getState(), initialRng);
 
-    // find a neighbor cell with a node
     const neighbor = init.state.map.nodes.find(
-        (n) => n.kind !== null && hexDistance(n.coord, init.state.position) === 1,
+        (n) => n.kind === 'battle' && hexDistance(n.coord, init.state.position) === 1,
     )!;
-    const entered = stepTo(init.state, neighbor.coord, makeCtx(2));
+    const entered = stepTo(init.state, neighbor.coord, ctx);
     assert.equal(entered.state.phase, 'battle');
-    const inBattleMove = stepTo(entered.state, init.state.position, makeCtx(2));
-    assert.ok(inBattleMove.snapshot.lastRejection !== null);
-    assert.equal(inBattleMove.state.phase, 'battle');
+    const before = JSON.stringify(entered.state);
+    const rngBefore = rng.getState();
+    for (const target of [init.state.position, neighbor.coord, { q: 99, r: 99 }]) {
+        const rejected = stepTo(entered.state, target, ctx);
+        assert.ok(rejected.snapshot.lastRejection !== null);
+        assert.equal(rejected.state, entered.state);
+        assert.equal(rejected.state.revision, entered.state.revision);
+        assert.deepEqual({ ...rejected.snapshot, lastRejection: null }, entered.snapshot);
+        assert.equal(JSON.stringify(entered.state), before);
+        assert.equal(rng.getState(), rngBefore);
+    }
+});
+
+test('T113/AC-8: returning to a completed battle never restarts battle or grants another reward', () => {
+    const rng = createSeededRng(2);
+    const ctx: CoreContext = { clock: createFixedClock(0), rng };
+    const initial = initGame(makeConfig(2), ctx).state;
+    const node = initial.map.nodes.find(n => n.kind === 'battle' && hexDistance(n.coord, initial.position) === 1)!;
+    let state = stepTo(initial, node.coord, ctx).state;
+    for (const defId of ['red-atk', 'blue-atk']) {
+        const card = state.deck.hand.find(c => c.defId === defId)!;
+        const result = advance(state, { type: 'playCard', uid: card.uid }, ctx);
+        assert.equal(result.snapshot.lastRejection, null);
+        state = result.state;
+    }
+    assert.equal(state.phase, 'reward');
+    const chosen = advance(state, { type: 'chooseReward', defId: state.rewardCandidates[0]! }, ctx);
+    assert.equal(chosen.snapshot.lastRejection, null);
+    state = chosen.state;
+    assert.equal(state.phase, 'map');
+    assert.equal(state.map.nodes.find(n => n.coord.q === node.coord.q && n.coord.r === node.coord.r)!.visited, true);
+    const deck = JSON.stringify(state.deck);
+    assert.equal([...state.deck.drawPile, ...state.deck.hand, ...state.deck.discardPile, ...state.deck.exhaustPile].length,
+        initial.config.startingDeck.length + 1);
+    const before = JSON.stringify({ map: state.map, party: state.party, energy: state.energy });
+    const rngBefore = rng.getState();
+    for (let visit = 0; visit < 3; visit += 1) {
+        for (const target of [initial.position, node.coord]) {
+            const revision = state.revision;
+            const result = stepTo(state, target, ctx);
+            assert.equal(result.snapshot.lastRejection, null);
+            state = result.state;
+            assert.equal(state.phase, 'map');
+            assert.equal(state.battle, null);
+            assert.deepEqual(state.rewardCandidates, []);
+            assert.deepEqual(state.position, target);
+            assert.equal(state.revision, revision + 1);
+            assert.equal(JSON.stringify(state.deck), deck);
+            assert.equal(JSON.stringify({ map: state.map, party: state.party, energy: state.energy }), before);
+            assert.equal(rng.getState(), rngBefore);
+        }
+    }
+});
+
+test('T113/AC-8: a naturally generated rest node heals once but never on later visits', () => {
+    const rng = createSeededRng(1);
+    const ctx: CoreContext = { clock: createFixedClock(0), rng };
+    const initial = initGame(makeConfig(1), ctx).state;
+    const node = initial.map.nodes.find(n => n.kind === 'rest' && hexDistance(n.coord, initial.position) === 1)!;
+    const injured: GameState = { ...initial, party: initial.party.map((hero, i) => ({ ...hero, hp: i === 0 ? 7 : 12 })) };
+    const original = JSON.stringify(injured);
+    const first = stepTo(injured, node.coord, ctx);
+    assert.equal(first.snapshot.lastRejection, null);
+    assert.equal(JSON.stringify(injured), original);
+    let state = first.state;
+    assert.deepEqual(state.party.map(hero => hero.hp), [17, 22]);
+    assert.equal(state.map.nodes.find(n => n.coord.q === node.coord.q && n.coord.r === node.coord.r)!.visited, true);
+    const before = JSON.stringify({ map: state.map, party: state.party, deck: state.deck, energy: state.energy });
+    const rngBefore = rng.getState();
+    for (let visit = 0; visit < 3; visit += 1) {
+        for (const target of [initial.position, node.coord]) {
+            const revision = state.revision;
+            const result = stepTo(state, target, ctx);
+            assert.equal(result.snapshot.lastRejection, null);
+            state = result.state;
+            assert.equal(state.phase, 'map');
+            assert.equal(state.battle, null);
+            assert.deepEqual(state.rewardCandidates, []);
+            assert.deepEqual(state.position, target);
+            assert.equal(state.revision, revision + 1);
+            assert.equal(JSON.stringify({ map: state.map, party: state.party, deck: state.deck, energy: state.energy }), before);
+            assert.equal(rng.getState(), rngBefore);
+        }
+    }
 });
 
 // ---- AC-9 / AC-10: energy + payment ----

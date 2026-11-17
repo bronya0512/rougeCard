@@ -1,11 +1,13 @@
 async page => {
     const url = page.url();
     const preview = url.includes(':7456/');
-    const prefix = preview ? 'TeamPreview' : 'Team';
+    const mapRevisit = !preview && /[?&]verify=t113(?:&|$)/.test(url);
+    const prefix = mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
     const errors = [];
     const httpErrors = [];
     const trace = [];
     page.on('pageerror', error => errors.push(error.message));
+    page.on('requestfailed', request => httpErrors.push(`${request.failure()?.errorText} ${request.url()}`));
     page.on('console', message => {
         if (message.type() === 'error') errors.push(message.text());
     });
@@ -143,6 +145,76 @@ async page => {
     };
 
     await page.setViewportSize({ width: 1280, height: 1080 });
+    if (mapRevisit) {
+        let view = await start();
+        check(view.save === null, 'Use an isolated browser session for T113');
+        await click('TeamPage/Roster_0');
+        await click('TeamPage/Roster_2');
+        view = await click('TeamPage/ConfirmTeam');
+        const origin = view.snapshot.map.position;
+        const rest = view.snapshot.map.nodes.find(node => node.kind === 'rest' && distance(node.coord, origin) === 1);
+        check(rest, 'Expected an adjacent rest node');
+        const battle = view.snapshot.map.nodes.find(node => node.kind === 'battle'
+            && distance(node.coord, origin) === 1 && distance(node.coord, rest.coord) === 1);
+        check(battle, 'Expected a battle adjacent to both center and rest');
+        view = await advance(tile(rest.coord), 'right');
+        check(view.snapshot.map.nodes.find(node => distance(node.coord, rest.coord) === 0).visited,
+            'First rest visit was not recorded');
+        await capture('RestUsed');
+        await advance(tile(origin), 'right');
+        await advance(tile(battle.coord), 'right');
+        view = await fight();
+        check(view.snapshot.phase === 'reward', 'Normal battle did not finish with rewards');
+        const total = view.snapshot.hand.length + view.snapshot.drawCount + view.snapshot.discardCount;
+        view = await advance('RewardPage/RewardCard_0');
+        check(view.snapshot.phase === 'map'
+            && view.snapshot.hand.length + view.snapshot.drawCount + view.snapshot.discardCount === total + 1,
+            'Expected exactly one reward after completing the battle');
+        check(view.snapshot.party.some(hero => hero.hp < hero.maxHp), 'Rest regression needs actual battle damage');
+        const injuredHp = view.snapshot.party.map(hero => hero.hp);
+        const moveVisited = async coord => {
+            const before = await read();
+            check(before.snapshot.map.nodes.find(node => distance(node.coord, coord) === 0)?.visited,
+                'Revisit target must already be visited');
+            const savedBefore = JSON.parse(before.save);
+            view = await advance(tile(coord), 'right');
+            const savedAfter = JSON.parse(view.save);
+            check(view.ui.map && view.snapshot.phase === 'map' && view.snapshot.enemy === null
+                && view.snapshot.rewardCandidates.length === 0, 'Visited node retriggered an event');
+            check(view.snapshot.revision === before.snapshot.revision + 1, 'Revisit must save only one movement revision');
+            check(distance(view.snapshot.map.position, coord) === 0, 'Revisit position was not saved');
+            check(JSON.stringify({ ...savedBefore.state, revision: 0, position: null })
+                === JSON.stringify({ ...savedAfter.state, revision: 0, position: null }),
+                'Revisit changed state beyond position and revision');
+            check(savedAfter.rngState === savedBefore.rngState, 'Revisit consumed RNG');
+            check(view.save !== before.save && savedAfter.state.revision === view.snapshot.revision,
+                'Accepted revisit did not save movement');
+        };
+        for (let visit = 0; visit < 3; visit += 1) {
+            await moveVisited(origin);
+            const beforeLoad = view;
+            view = await resume();
+            unchanged(beforeLoad, view, 'Battle visit reload differs from last save');
+            await moveVisited(battle.coord);
+        }
+        await capture('BattleRevisited');
+        await moveVisited(rest.coord);
+        for (let visit = 0; visit < 3; visit += 1) {
+            await moveVisited(origin);
+            const beforeLoad = view;
+            view = await resume();
+            unchanged(beforeLoad, view, 'Rest visit reload differs from last save');
+            await moveVisited(rest.coord);
+        }
+        check(JSON.stringify(view.snapshot.party.map(hero => hero.hp)) === JSON.stringify(injuredHp),
+            'Used rest node healed battle damage on revisit');
+        await capture('RestRevisited');
+        await page.waitForTimeout(200);
+        check(errors.length === 0 && httpErrors.length === 0, 'T113 browser or HTTP errors detected');
+        return { result: 'T113 AC-8 WEB PASS', source: 'web-build', url, errors, httpErrors,
+            battleRevisits: 3, restRevisits: 4, reloads: 6, finalRevision: view.snapshot.revision,
+            finalPartyHp: injuredHp, mouseActions: trace.length, keyboardActions: 0, trace };
+    }
     let view = await start();
     check(view.save === null, 'Use a new isolated browser session with no existing save');
     await capture('Selection');

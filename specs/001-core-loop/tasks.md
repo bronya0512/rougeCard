@@ -86,13 +86,62 @@
   验证边界：实包完整通关为两人默认3层；三人实包验证初场战斗/读档，三人跨层和4/5层由核心测试覆盖，不声称三人或4/5层Web完整通关。AC-22~24已有单测与实包证据；用户现已授权本地提交并继续，T112勾选随本地Git检查点归档（提交主题feat(M1): close T112 - ordered team selection before new runs），不push。提交前49/49及三端adapter类型检查再次通过（temp/t109-tests.log）；接续仅T109最终验收，不实现其他任务。
 - [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-24，记录证据，打检查点
   完成判据：全部验收项有证据；未通过项转为新 task 而非直接勾选。
+  本轮审查（2026-11-17，基线T112检查点`55c498d`）：逐项检查现有测试正文及实包JSON/截图，不依据测试名称或WEB PASS标签推断完整覆盖。复跑`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`，49/49通过、三端adapter类型检查通过（`temp/t109-tests.log`）；`check-layering.ps1`全部通过，修改文件IDE诊断0，`node --check build/scripts/verify-web.js`通过。复核实包main/index.js仍为16:55:15/46817字节、HTTP200，使用已提交`Team-AC15-24.json`及截图，不声称本轮重新跑了浏览器全流程。根tsc既有扩展类型错误未修复，本轮未重跑根tsc。
+  结论（T113验证后更新）：17项已有所要求的单测/实包证据，7项仅部分覆盖（含AC-1核心已有证据、进程内契约未执行）。T109保持未勾选；以下“部分”是证据不足，不等于已发现实现错误。用户已授权本地提交，T113勾选随检查点归档；T114~T118尚未实现。
+  口径同步（2026-11-17）：用户选择“M1先验核心”，先更新spec FR-6/AC-1及后续真实三端验收，再同步plan映射与本表/T118/T202/T302；未改业务代码、未执行新增测试、未重新构建或浏览器验收。本次只同步T109验收基线，不勾选T109/T118；三份流程文档待提交，原49/49与实包证据保持历史范围。
+  路线说明（2026-11-17）：应用户要求在plan§7.1～7.3补充项目制作到上线的Mermaid流程图、角色/怪物/配置/数值/美术接入与冻结时序。仅作为后续建议路线，不新增或勾选实现任务、不修改验收要求、不授权终版美术或部署；本轮无代码/资源改动，无需重新构建。流程图已人工核对节点与分支；未安装Mermaid渲染器，未验证渲染效果。
+
+  | AC | 核对结果 | 证据或尚缺断言 |
+  |---|---|---|
+  | AC-1 | 部分：核心通过、进程内契约待T118 | `engine.test.ts`同seed同输入、`floors.test.ts`五层及`team-selection.test.ts`同阵容确定性已有证据；三adapter工厂尚未实际运行对照，类型检查不替代契约。T118补齐各存储保存/恢复后续结果与未中断运行对照；真实三端按用户确认延后至T202/T302，不再阻塞M1，也不由进程内结果推断真机一致 |
+  | AC-2 | 已有证据 | `Team-AC15-24.json`两人默认3层普通战斗/奖励/boss/胜利，浏览器及HTTP错误0 |
+  | AC-3 | 已有证据 | `save.test.ts`最近存档与未来Snapshot；`Team-AC15-24.json`战斗、层间及三人初战继续读档 |
+  | AC-4 | 本轮通过 | `check-layering.ps1`：core/game禁用平台标识0、状态变更仅经dispatch；白名单见plan§3 |
+  | AC-5 | 部分 | 54/54通过，T113已补齐AC-8；AC-9/11/12与胜负结算全部输入冻结仍待T114~T116补齐后复核 |
+  | AC-6 | 已有证据 | M0阻塞项除延后T003外均已勾选、plan为Confirmed，按宪法v0.2 |
+  | AC-7 | 已有证据 | `engine.test.ts`地图同seed一致、中心/唯一外圈boss/配置节点数、10seed不全相同 |
+  | AC-8 | T113验证通过 | `engine.test.ts`3次重访已完成战斗/已用休息及移动拒绝，牌UID/HP/原state/RNG不变；`save.test.ts`读档重访仅写位置/revision，非法移动存档字节/写次数/RNG不变。实包`MapRevisit-AC8.json`52鼠标/0键盘、战斗3次/已用休息4次重访、6次读档；首次满血休息后战斗损血，重访始终HP27/30，页面/HTTP/请求失败与完整控制台错误0 |
+  | AC-9 | 部分 | `engine.test.ts`红蓝产能、`team-selection.test.ts`绿色产能/死亡停产；缺高剩余能量跨回合不累积断言，转T114 |
+  | AC-10 | 已有基本三分支证据 | `engine.test.ts`白色补足/不足拒绝，`team-selection.test.ts`同色足够付费；T114同时强化同色优先与同色+白色混合补差 |
+  | AC-11 | 部分 | `engine.test.ts`死亡后总牌数/休息复活、`floors.test.ts`死亡与全牌UID跨层；缺无白能量时红色阵亡卡手拒绝的直接断言，转T114 |
+  | AC-12 | 部分 | `engine.test.ts`意图与指定格挡、`team-selection.test.ts`首选受击；缺格挡先吸伤、跳过阵亡首位攻击下一位断言，转T115 |
+  | AC-13 | 已有证据 | `engine.test.ts`全灭失败/胜利/三张红蓝候选与选择+1，`Team-AC15-24.json`最终层胜利 |
+  | AC-14 | 已有证据 | `engine.test.ts`弃牌洗回；同seed输入序列中的endTurn触发洗回并逐字段对比含手牌UID的Snapshot |
+  | AC-15 | 已有证据 | `Team-AC15-24.json`与`Team-Battle.png`独立战斗页、敌左我右、奖励回图和战斗读档 |
+  | AC-16 | 单测与主要实包分支有证据 | `selection.test.ts`切换/取消/死亡目标/清理；实包验证选牌不改状态或存档、错误目标、取消、定向施放。连续切牌/死亡目标来自单测，不写成已在实包操作 |
+  | AC-17 | 已有证据 | `Team-AC15-24.json`左查/右移/非相邻拒绝/右键菜单；本轮查看`Team-MapInfo.png`确认类型、坐标(0,-1)、未访问、相邻可右键移动四字段 |
+  | AC-18 | 已有证据 | `Team-AC15-24.json`108鼠标/0键盘，两人默认3层完整通关与鼠标重开组队 |
+  | AC-19 | 部分 | `floors.test.ts`3/4/5层核心通关、非法层数、切层revision与默认3层实包通关；最终冻结仅胜利移动断言，转T116 |
+  | AC-20 | 已有证据 | `floors.test.ts`HP/死亡/奖励与消耗区牌UID/手牌归弃/零能量格挡/独立历史地图；`Team-Floor2.png`、`Team-Floor3.png`与实包层间读档 |
+  | AC-21 | 部分 | `floors.test.ts`boss前后读档/RNG、schema1 map/battle/victory迁移、坏档回退；旧schema1 defeat未专测，转T117 |
+  | AC-22 | 已有证据 | `team-selection.test.ts`人数/顺序/去重/2攻1防、6/9牌，实包START和重开选人/确认前不写档 |
+  | AC-23 | 已有证据 | `team-selection.test.ts`绿色攻击4/格挡3/费用1/产能死亡/敌方顺序，实包三人布局/绿色格挡第三队友；死亡分支仅单测 |
+  | AC-24 | 已有证据 | `team-selection.test.ts`只读/损坏配置/顺序/旧红蓝/确定性/三人跨层恢复，实包继续游戏/未确认不覆盖/重开确认才替换旧档 |
+
+- [x] **T113** 补已访问节点不重触发回归（AC-8，预计2小时）
+  完成判据：离开并重返已完成战斗节点不再入战/奖励/加牌，重返已用休息点不再次回血；战斗中移动拒绝且state/revision/存档不变；`test-core.ps1`与分层通过，当前Web包运行证据有效。
+  实现/单测证据（2026-11-17）：本会话仅T113，遵守用户选择，不改宪法。`tests/core/engine.test.ts`强化移动拒绝并新增2条：自然地图seed2实际战斗/选奖励后3次重访，seed1受伤HP7/12首休变17/22后3次重访，均断言不重触发、牌组/HP/原state/RNG不变、合法移动revision+1。`tests/game/save.test.ts`新增3条：战斗非法移动state/revision/存档字节/写次数不变且后续抽牌与读档对照相同；完成战斗/已用休息在每次读档后3次重访仅保存位置/revision，牌组/RNG不变。`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`：54/54通过、三adapter类型检查通过（`temp/t113-tests.log`）。
+  实包证据：`verify-web.js`新增`?verify=t113`分支及网络requestfailed监听，保留默认组队流程。`playwright-cli -s=t113-clean open --browser=msedge http://127.0.0.1:8123/?verify=t113`后，以UTF8读取脚本并run-code（`temp/t113-web-clean.log`），结果`T113 AC-8 WEB PASS/source=web-build`。52次真实鼠标/0键盘，满血首休→战斗受伤/获1牌→3次战斗重访/4次已用休息重访、6次继续读档；存档除position/revision外逐字段不变，HP始终27/30，最终REV23，页面/HTTP/请求失败0。干净会话完整控制台含首屏检查无错误；证据`MapRevisit-AC8.json`与`MapRevisit-{RestUsed,BattleRevisited,RestRevisited}.png`。
+  验证边界/收尾：初次脚本因沙箱无URL全局失败，改精确参数正则；首次浏览器导航曾ERR_NO_BUFFER_SPACE，已关闭本任务旧会话并全新会话完整重验，干净结果与保存JSON逐字段一致。`check-layering.ps1`、`node --check build/scripts/verify-web.js`、修改文件IDE诊断与`git diff --check`通过；assets及依赖均未改、Web包仍16:55:15/46817字节/HTTP200，本轮只复验现有真实包，未重新Build。原始组队全流程本轮未重跑，根tsc既有扩展错误本轮未处理。实现与验证已满足；用户已授权本地提交，T113勾选随Git检查点归档（提交主题test(M1): close T113 - visited node regression coverage），同时归档此前已确认的M1验收口径和项目路线图文档，不push；T114~T118不执行。
+- [ ] **T114** 补能量清空与阵亡卡手回归（AC-9/10/11，预计3小时）
+  完成判据：受控高剩余红蓝白能量endTurn后仅存活者新产能、白能量0；红色阵亡牌UID及总牌数不变、无白能量出红牌拒绝且不写档；同色优先/混合白色补差及不足拒绝均断言；`test-core.ps1`与分层通过。
+- [ ] **T115** 补格挡吸伤与跳过阵亡首位回归（AC-12，预计2小时）
+  完成判据：格挡3/伤害5时目标HP只减2、其他队友不受伤、下回合格挡0；首位已死时敌方攻击下一位存活者；`test-core.ps1`与分层通过。
+- [ ] **T116** 补胜负结算输入冻结矩阵（AC-5/19、FR-4，预计2小时）
+  完成判据：实际推进得到victory和defeat，分别投递start/move/playCard/endTurn/chooseReward全部拒绝；state/revision/RNG不变，GameSession不写存档；`test-core.ps1`与分层通过。
+- [ ] **T117** 补旧schema1失败存档迁移回归（AC-21，预计1小时）
+  完成判据：完整旧defeat档保持单层失败、队伍/牌UID/RNG；迁移不改原对象，读回与迁移Snapshot一致；`test-core.ps1`与分层通过。
+- [ ] **T118** 补三adapter进程内确定性契约（M1 AC-1，预计3小时）
+  完成判据：在同一Node环境实际实例化web/wx/win工厂，固定配置/seed/Clock时间/S1逐步比较序列化Snapshot；经各StoragePort保存/恢复后，用相同后续输入与未中断运行比较每步Snapshot及RNG状态；Web测试环境不泄漏至core/game；`test-core.ps1`与分层通过。结合已有核心确定性测试可支撑M1 AC-1；不得宣称真实三端运行通过，后续真机对照由T202/T302承接。
 
 ## M2 / M3 / M4（backlog，M1 验收后再拆细）
 
 - [ ] **T201** 微信小游戏 `PlatformAdapter` 实现 + 首包体积/分包达标
-- [ ] **T202** 微信小游戏真机验证 + 三端一致性（AC-1）
+- [ ] **T202** 微信小游戏真机验证 + 真实结果对照（spec§6后续验收）
+  待细拆：同版本/配置/seed/时间/S1，记录微信与真实Web每步Snapshot及存档恢复后续结果；不以M1进程内契约代替。
 - [ ] **T301** Windows `PlatformAdapter` 实现 + Steamworks SDK 接入
-- [ ] **T302** depot 上传与 Steam 内部测试
+- [ ] **T302** depot 上传与 Steam 内部测试 + 真实三端结果对照（spec§6后续验收）
+  待细拆：Windows适配后对同一版本/配置/seed/时间/S1记录每步Snapshot及存档恢复后续结果，并与Web/微信真实运行对比；三端对照证据齐全后才通过后续一致性验收。
 - [ ] **T401** 内容填充、性能打磨、上架材料
 
 ## 验证证据记录

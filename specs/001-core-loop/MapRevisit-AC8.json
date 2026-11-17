@@ -1,0 +1,580 @@
+﻿{
+    "result":  "T113 AC-8 WEB PASS",
+    "source":  "web-build",
+    "url":  "http://127.0.0.1:8123/?verify=t113",
+    "errors":  [
+
+               ],
+    "httpErrors":  [
+
+                   ],
+    "battleRevisits":  3,
+    "restRevisits":  4,
+    "reloads":  6,
+    "finalRevision":  23,
+    "finalPartyHp":  [
+                         27,
+                         30
+                     ],
+    "mouseActions":  52,
+    "keyboardActions":  0,
+    "trace":  [
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ConfirmTeam",
+                      "phase":  "map",
+                      "revision":  0,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_1_-1",
+                      "phase":  "map",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  3,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  7,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  8,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  8,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "reward",
+                      "revision":  9,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_0",
+                      "phase":  "map",
+                      "revision":  10,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  11,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  11,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "map",
+                      "revision":  12,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  13,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  13,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "map",
+                      "revision":  14,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  15,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  15,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "map",
+                      "revision":  16,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_1_-1",
+                      "phase":  "map",
+                      "revision":  17,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  18,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  18,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_1_-1",
+                      "phase":  "map",
+                      "revision":  19,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  20,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  20,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_1_-1",
+                      "phase":  "map",
+                      "revision":  21,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_1_-1",
+                      "phase":  "map",
+                      "revision":  23,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  }
+              ]
+}

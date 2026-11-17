@@ -146,3 +146,115 @@ test('T107: rejected input leaves the save untouched', () => {
     assert.equal(storage.writes, writesBefore);
     assert.equal(s.snapshot.revision, 0);
 });
+
+test('T113/AC-8: rejected battle moves preserve the session, save bytes, writes and RNG', () => {
+    const storage = new MemoryStorage();
+    const config = makeConfig(2);
+    const session = new GameSession(config, { storage, now: () => 100 });
+    const origin = session.snapshot.map.position;
+    enterFirstBattle(session);
+    const before = session.snapshot;
+    const saved = storage.get(SAVE_KEY);
+    const writes = storage.writes;
+    const data = GameSession.readSave(storage)!;
+    for (const target of [origin, before.map.position, { q: 99, r: 99 }]) {
+        const rejected = session.dispatch({ type: 'move', to: target });
+        assert.ok(rejected.lastRejection !== null);
+        assert.deepEqual({ ...rejected, lastRejection: null }, before);
+        assert.deepEqual(session.snapshot, before);
+        assert.equal(session.snapshot.revision, before.revision);
+        assert.equal(storage.get(SAVE_KEY), saved);
+        assert.equal(storage.writes, writes);
+    }
+    const resumed = GameSession.load(storage, config, () => 100);
+    assert.deepEqual(session.dispatch({ type: 'endTurn' }), resumed.dispatch({ type: 'endTurn' }));
+    assert.notEqual(GameSession.readSave(storage)!.rngState, data.rngState);
+});
+
+test('T113/AC-8: completed battle visits remain event-free after reload and save only movement', () => {
+    const storage = new MemoryStorage();
+    const base = makeConfig(2);
+    const config: GameConfig = { ...base, enemies: [{ ...base.enemies[0]!, hp: 4 }, base.enemies[1]!] };
+    let session = new GameSession(config, { storage, now: () => 100 });
+    const origin = session.snapshot.map.position;
+    enterFirstBattle(session);
+    const target = session.snapshot.map.position;
+    for (let turn = 0; session.snapshot.phase === 'battle' && turn < 10; turn += 1) {
+        const card = session.snapshot.hand.find(c => c.playable && c.def.effect.kind === 'attack');
+        session.dispatch(card === undefined ? { type: 'endTurn' } : { type: 'playCard', uid: card.uid });
+    }
+    assert.equal(session.snapshot.phase, 'reward');
+    session.dispatch({ type: 'chooseReward', defId: session.snapshot.rewardCandidates[0]!.id });
+    assert.equal(session.snapshot.phase, 'map');
+    const completed = GameSession.readSave(storage)!;
+    const deck = JSON.stringify(completed.state.deck);
+    assert.equal([...completed.state.deck.drawPile, ...completed.state.deck.hand, ...completed.state.deck.discardPile,
+        ...completed.state.deck.exhaustPile].length, config.startingDeck.length + 1);
+    assert.equal(completed.state.map.nodes.find(n => n.coord.q === target.q && n.coord.r === target.r)!.visited, true);
+    for (let visit = 0; visit < 3; visit += 1) {
+        for (const to of [origin, target]) {
+            const before = session.snapshot;
+            const writes = storage.writes;
+            session = GameSession.load(storage, config, () => 100);
+            assert.deepEqual(session.snapshot, before);
+            assert.equal(storage.writes, writes);
+            const moved = session.dispatch({ type: 'move', to });
+            assert.equal(moved.lastRejection, null);
+            assert.equal(moved.phase, 'map');
+            assert.equal(moved.enemy, null);
+            assert.deepEqual(moved.rewardCandidates, []);
+            assert.deepEqual(moved.party, before.party);
+            assert.deepEqual(moved.map.position, to);
+            assert.equal(moved.revision, before.revision + 1);
+            assert.equal(storage.writes, writes + 1);
+            const saved = GameSession.readSave(storage)!;
+            assert.equal(saved.state.revision, moved.revision);
+            assert.deepEqual(saved.state.position, to);
+            assert.equal(JSON.stringify(saved.state.deck), deck);
+            assert.equal(saved.rngState, completed.rngState);
+        }
+    }
+});
+
+test('T113/AC-8: used rest visits preserve injured HP and deck across reload without healing again', () => {
+    const storage = new MemoryStorage();
+    const config = makeConfig(1);
+    const initial = new GameSession(config, { storage, now: () => 100 });
+    initial.save();
+    const data = GameSession.readSave(storage)!;
+    const injured = { ...data, state: { ...data.state,
+        party: data.state.party.map((hero, i) => ({ ...hero, hp: i === 0 ? 7 : 12 })) } };
+    assert.equal(isSaveData(injured), true);
+    let session = new GameSession(config, { storage, now: () => 100, restored: injured });
+    const origin = session.snapshot.map.position;
+    const rest = session.snapshot.map.nodes.find(n => n.kind === 'rest' && hexDistance(n.coord, origin) === 1)!;
+    const first = session.dispatch({ type: 'move', to: rest.coord });
+    assert.equal(first.lastRejection, null);
+    assert.deepEqual(first.party.map(hero => hero.hp), [17, 22]);
+    const used = GameSession.readSave(storage)!;
+    const deck = JSON.stringify(used.state.deck);
+    assert.equal(used.state.map.nodes.find(n => n.coord.q === rest.coord.q && n.coord.r === rest.coord.r)!.visited, true);
+    for (let visit = 0; visit < 3; visit += 1) {
+        for (const to of [origin, rest.coord]) {
+            const before = session.snapshot;
+            const writes = storage.writes;
+            session = GameSession.load(storage, config, () => 100);
+            assert.deepEqual(session.snapshot, before);
+            assert.equal(storage.writes, writes);
+            const moved = session.dispatch({ type: 'move', to });
+            assert.equal(moved.lastRejection, null);
+            assert.equal(moved.phase, 'map');
+            assert.equal(moved.enemy, null);
+            assert.deepEqual(moved.rewardCandidates, []);
+            assert.deepEqual(moved.party, first.party);
+            assert.deepEqual(moved.map.position, to);
+            assert.equal(moved.revision, before.revision + 1);
+            assert.equal(storage.writes, writes + 1);
+            const saved = GameSession.readSave(storage)!;
+            assert.equal(saved.state.revision, moved.revision);
+            assert.deepEqual(saved.state.position, to);
+            assert.equal(JSON.stringify(saved.state.deck), deck);
+            assert.equal(saved.rngState, used.rngState);
+        }
+    }
+});
