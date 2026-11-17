@@ -54,6 +54,8 @@ export interface Snapshot {
     readonly version: 1;
     readonly phase: Phase;
     readonly revision: number;
+    readonly floor: number;
+    readonly floorCount: number;
     readonly map: MapView;
     readonly party: readonly CharacterView[];
     readonly energy: EnergyView;

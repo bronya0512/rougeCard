@@ -4,7 +4,7 @@
 /** Energy / card colors. White is the universal color (pays any cost). */
 export type Color = 'red' | 'green' | 'blue' | 'white';
 
-/** Hex grid coordinate (axial q/r). M1 map is radius 2, single layer. */
+/** Hex grid coordinate (axial q/r), local to one floor. */
 export interface HexCoord {
     readonly q: number;
     readonly r: number;
@@ -20,7 +20,7 @@ export interface MapNode {
     readonly visited: boolean;
 }
 
-/** Running-mode map (M1: one layer, radius 2, boss at outermost ring). */
+/** One floor's map, with independent nodes and a boss on its outer ring. */
 export interface GameMap {
     readonly radius: number;
     readonly nodes: readonly MapNode[];

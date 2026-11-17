@@ -39,9 +39,16 @@ export interface EnemyDef {
     readonly damage: number;
 }
 
-/** All tunables are configuration (spec 1.2 / FR-8~17). */
+export type FloorCount = 1 | 3 | 4 | 5;
+
+export function isFloorCount(value: unknown): value is FloorCount {
+    return value === 1 || value === 3 || value === 4 || value === 5;
+}
+
+/** All tunables are configuration. One floor is reserved for legacy saves/tests. */
 export interface GameConfig {
     readonly seed: number;
+    readonly floorCount: FloorCount;
     readonly mapRadius: number;
     readonly startHp: number;
     /** Energy produced per surviving character each player turn. */
@@ -79,6 +86,9 @@ export interface GameState {
     readonly version: 1;
     readonly config: GameConfig;
     readonly phase: Phase;
+    readonly floor: number;
+    /** Completed floors only; the active floor lives exclusively in map. */
+    readonly completedMaps: readonly GameMap[];
     readonly map: GameMap;
     readonly position: HexCoord;
     readonly party: readonly Character[];

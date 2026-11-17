@@ -3,6 +3,7 @@
 // all randomness/time come from the injected CoreContext (constitution §4).
 import type { Advance, BuildSnapshot, InitGame } from './contract';
 import { generateMap, hexDistance } from './map';
+import { isFloorCount } from './state';
 import type { CoreContext, EnemyDef, GameConfig, GameState } from './state';
 import type { GameInput } from './input';
 import type { Snapshot } from './snapshot';
@@ -47,6 +48,8 @@ export const buildSnapshot: BuildSnapshot = (state: GameState): Snapshot => {
         version: 1,
         phase: state.phase,
         revision: state.revision,
+        floor: state.floor,
+        floorCount: state.config.floorCount,
         map: {
             radius: state.map.radius,
             nodes: state.map.nodes,
@@ -144,6 +147,7 @@ function makeEnemy(def: EnemyDef): Enemy {
 
 /** Create the initial state from seed + config (FR-1 / FR-8). */
 export const initGame: InitGame = (config: GameConfig, ctx: CoreContext) => {
+    if (!isFloorCount(config.floorCount)) throw new Error('floorCount must be 3, 4 or 5 (1 for legacy runs)');
     const map = generateMap(config, ctx.rng);
     const party: Character[] = [
         { id: 'hero-red', color: 'red', hp: config.startHp, maxHp: config.startHp, block: 0, alive: true },
@@ -164,6 +168,8 @@ export const initGame: InitGame = (config: GameConfig, ctx: CoreContext) => {
         version: 1,
         config,
         phase: 'map',
+        floor: 1,
+        completedMaps: [],
         map,
         position: map.start,
         party,
@@ -345,9 +351,20 @@ export const advance: Advance = (state: GameState, input: GameInput, ctx: CoreCo
                 hp: Math.max(0, state.battle!.enemy.hp - effect.damage),
             };
             if (enemy.hp === 0) {
-                const isBoss = enemy.id === state.config.enemies[state.config.enemies.length - 1]!.id;
+                const isBoss = nodeAt(state, state.position)?.kind === 'boss';
                 if (isBoss) {
-                    return ok(commit(state, { energy, deck, phase: 'victory', battle: null, rewardCandidates: [] }));
+                    if (state.floor === state.config.floorCount) {
+                        return ok(commit(state, { energy, deck, phase: 'victory', battle: null, rewardCandidates: [] }));
+                    }
+                    const map = generateMap(state.config, ctx.rng);
+                    return ok(commit(state, {
+                        phase: 'map', floor: state.floor + 1,
+                        completedMaps: [...state.completedMaps, state.map],
+                        map, position: map.start, battle: null, rewardCandidates: [],
+                        energy: zeroEnergy(),
+                        party: state.party.map(hero => ({ ...hero, block: 0 })),
+                        deck: { ...deck, hand: [], discardPile: [...deck.discardPile, ...deck.hand] },
+                    }));
                 }
                 const rewards = rollRewards(state, ctx);
                 return ok(commit(state, { energy, deck, phase: 'reward', battle: null, rewardCandidates: rewards }));

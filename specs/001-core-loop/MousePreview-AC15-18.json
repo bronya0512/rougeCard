@@ -1,0 +1,266 @@
+﻿{
+    "result":  "T110 PREVIEW PASS",
+    "source":  "editor-preview",
+    "url":  "http://127.0.0.1:7456/",
+    "errors":  [
+
+               ],
+    "httpErrors":  [
+
+                   ],
+    "contextPrevented":  true,
+    "finalRevision":  18,
+    "finalPartyHp":  [
+                         17,
+                         30
+                     ],
+    "mouseActions":  35,
+    "keyboardActions":  0,
+    "trace":  [
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "map",
+                      "revision":  0,
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "map",
+                      "revision":  0,
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-2_0",
+                      "phase":  "map",
+                      "revision":  0,
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "selected":  "card-4",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_0",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "selected":  "card-4",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/CancelCard",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "selected":  "card-2",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "selected":  "card-2",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_1",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "selected":  "card-1",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  4,
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "selected":  "card-5",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "selected":  "card-4",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "reward",
+                      "revision":  7,
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_1",
+                      "phase":  "map",
+                      "revision":  8,
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-2",
+                      "phase":  "battle",
+                      "revision":  10,
+                      "selected":  null,
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  10,
+                      "selected":  "card-1",
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  11,
+                      "selected":  null,
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  11,
+                      "selected":  "card-4",
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  12,
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  13,
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  13,
+                      "selected":  "card-0",
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  14,
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  14,
+                      "selected":  "card-5",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  15,
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  16,
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  16,
+                      "selected":  "card-4",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  17,
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  17,
+                      "selected":  "card-1",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "victory",
+                      "revision":  18,
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:SettlementPage/Restart",
+                      "phase":  "map",
+                      "revision":  0,
+                      "selected":  null,
+                      "enemyHp":  null
+                  }
+              ]
+}

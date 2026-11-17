@@ -8,6 +8,10 @@ import * as assert from 'node:assert/strict';
 import {
     SAVE_SCHEMA_VERSION,
     isSaveData,
+    initGame,
+    createSeededRng,
+    createFixedClock,
+    hexDistance,
     type GameConfig,
     type GameState,
     type SaveData,
@@ -16,6 +20,7 @@ import {
 function makeConfig(seed: number): GameConfig {
     return {
         seed,
+        floorCount: 1,
         mapRadius: 2,
         startHp: 30,
         energyPerTurn: 1,
@@ -32,38 +37,8 @@ function makeConfig(seed: number): GameConfig {
     };
 }
 
-/**
- * Build a minimal state fixture matching the T102 type contract.
- * T104 will replace this with the real initGame() implementation; the assertions
- * below express the initial-state invariants that implementation must satisfy.
- */
 function makeInitialState(seed: number): GameState {
-    const center = { q: 0, r: 0 };
-    const boss = { q: 2, r: 0 };
-    return {
-        version: 1,
-        config: makeConfig(seed),
-        phase: 'map',
-        position: center,
-        map: {
-            radius: 2,
-            start: center,
-            boss,
-            nodes: [
-                { coord: center, kind: null, visited: true },
-                { coord: boss, kind: 'boss', visited: false },
-            ],
-        },
-        party: [
-            { id: 'hero-red', color: 'red', hp: 30, maxHp: 30, block: 0, alive: true },
-            { id: 'hero-blue', color: 'blue', hp: 30, maxHp: 30, block: 0, alive: true },
-        ],
-        energy: { red: 0, green: 0, blue: 0, white: 0 },
-        deck: { drawPile: [], hand: [], discardPile: [], exhaustPile: [] },
-        battle: null,
-        rewardCandidates: [],
-        revision: 0,
-    };
+    return initGame(makeConfig(seed), { rng: createSeededRng(seed), clock: createFixedClock(0) }).state;
 }
 
 test('initial state satisfies the T102 type contract', () => {
@@ -79,7 +54,9 @@ test('initial state satisfies the T102 type contract', () => {
     );
     assert.ok(state.party.every((c) => c.alive && c.hp === c.maxHp && c.block === 0));
     assert.deepEqual(state.position, state.map.start);
-    assert.deepEqual(state.map.boss, { q: 2, r: 0 });
+    assert.equal(hexDistance(state.map.start, state.map.boss), 2);
+    assert.equal(state.floor, 1);
+    assert.deepEqual(state.completedMaps, []);
     assert.equal(state.battle, null);
 });
 

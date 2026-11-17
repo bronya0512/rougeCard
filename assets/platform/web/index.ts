@@ -22,6 +22,15 @@ declare function addEventListener(type: string, listener: (event: unknown) => vo
 declare function removeEventListener(type: string, listener: (event: unknown) => void): void;
 declare const console: { warn(...args: unknown[]): void };
 
+export function installCanvasContextMenuGuard(): () => void {
+    const handler = (event: unknown): void => {
+        const e = event as { target?: { tagName?: string }; preventDefault(): void };
+        if (e.target?.tagName === 'CANVAS') e.preventDefault();
+    };
+    addEventListener('contextmenu', handler);
+    return () => removeEventListener('contextmenu', handler);
+}
+
 class WebStorage implements StoragePort {
     get(key: string): string | null {
         return localStorage.getItem(key);

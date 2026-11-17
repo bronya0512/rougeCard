@@ -28,6 +28,7 @@ const CARDS = {
 function makeConfig(seed = 1): GameConfig {
     return {
         seed,
+        floorCount: 1,
         mapRadius: 2,
         startHp: 30,
         energyPerTurn: 1,

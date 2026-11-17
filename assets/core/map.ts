@@ -1,5 +1,5 @@
 // Hex map generation (FR-8 / AC-7). Pure TypeScript.
-// M1: single layer, radius 2, start at center, one boss on the outer ring,
+// Generates one independent floor: radius 2, center start, one outer-ring boss,
 // configured number of rest nodes, all other cells are battle nodes.
 import type { GameConfig, Rng } from './state';
 import type { GameMap, HexCoord, MapNode, NodeKind } from './types';

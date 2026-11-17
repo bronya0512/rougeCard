@@ -10,6 +10,7 @@ import {
     createFixedClock,
     createSeededRng,
     initGame,
+    decodeSaveData,
     isSaveData,
     SAVE_SCHEMA_VERSION,
     type CoreContext,
@@ -62,8 +63,9 @@ export class GameSession {
         if (raw !== null) {
             try {
                 const parsed: unknown = JSON.parse(raw);
-                if (isSaveData(parsed)) {
-                    return new GameSession(config, { storage, restored: parsed, now });
+                const restored = decodeSaveData(parsed);
+                if (restored !== null) {
+                    return new GameSession(config, { storage, restored, now });
                 }
             } catch {
                 // corrupted JSON: discard below

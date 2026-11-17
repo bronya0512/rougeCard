@@ -3,7 +3,7 @@
 > 对应 CodeBuddy Plan 模式产物。技术细节只写在这里，不写进 `spec.md`。
 > 状态：Confirmed —— T006 复盘完成（风险结论见 §6），M0 阻塞项按**宪法 v0.2** 判据（Web + Windows 两端打通）已全部完成。微信小游戏 T003 因版号/合规成本按用户指示延后，不计入 M0 阻塞（构建产物已在 M0 生成）。据宪法 C-7 + `spec.md` AC-6（v0.2 口径），状态由 Draft 改为 Confirmed，解锁 M1。
 
-关联：`spec.md` FR-1 ~ FR-17 / AC-1 ~ AC-14
+关联：`spec.md` FR-1 ~ FR-19 / AC-1 ~ AC-21
 
 ## 1. 技术选型
 
@@ -29,6 +29,8 @@
 - `core/` 为纯函数式状态推进：`advance(state, input, ctx) -> { state, snapshot }`，`ctx` 注入 `Clock` / `Rng`。
 - `game/` 不持有业务状态，只订阅 `Snapshot` 做渲染；所有输入先转成 `GameInput`。
 - `PlatformAdapter` 在启动时按构建目标注入一次实现，业务层只见接口。
+- **T110 鼠标交互**：沿用 StartMenu 和 GameSession，在 GameRoot 的 Canvas 内用 MapPage/BattlePage/RewardPage/SettlementPage 显隐切页；enemy 在左、party 按原顺序置于右。BattleSelection 为纯 TS 临时选卡对象（uid），只产出合法 GameInput，选卡/信息展示不推进、不存档。Cocos EventMouse.getLocation → Canvas.cameraComponent.screenToWorld → UITransform.convertToNodeSpaceAR 做节点命中，避免 fitWidth 下可见高度与设计高度不一致造成偏移；Web 层提供画布右键菜单抑制及释放函数，由 StartMenu 生命周期安装/清理，不在 game/core 引入浏览器全局。右键移动仍委托 advance 校验。提供结束回合、取消、奖励和重开按钮；verify-web.js 改为纯鼠标验收，原 T108 证据保留。
+- **T111 多层地图**：GameConfig.floorCount（新局默认3，可选3/4/5；1只兼容旧档/单层测试）、GameState.floor（从1开始）与completedMaps（仅已完成楼层，当前map为唯一权威），Snapshot展示floor/floorCount。非最终boss致命出牌后归弃剩余手牌、清空能量/格挡、归档当前图，再用现有注入RNG生成下一层，HP/alive与牌UID不变；不重跑initGame、不增加boss奖励/难度。SaveData schema升级2，原key保持稳定，core.decodeSaveData将完整旧schema1单层档迁移为floor=1/floorCount=1，不把旧胜利改写为三层；新版校验楼层与历史地图长度，RNG状态续接。GameRoot楼层变化重新生成节点UI、清临时信息/选卡；Inspector可配置层数，鼠标验收扩展到所有楼层。
 - **目录现状偏差（2026-11-16，T001）**：宪法 §3 将场景归 `assets/game/`，但 M0 smoke test 的两张场景实际位于 `assets/scenes/`（T001b 建立的布局，T002/T004 的构建配置已引用该路径）。为避免破坏已验证的三端构建链路，M0 阶段保留此布局；M1 正式实现（T106）时再把场景归位到 `assets/game/`，并同步更新 `builder.json` 构建任务的场景路径。四大分层 `core/`、`platform/{web,wx,win}/`、`game/`、`resources/` 已建齐（T001）。
 
 ## 3. PlatformAdapter 接口（T105 定稿）
@@ -88,6 +90,8 @@ T106 核心玩法画面实测（2026-11-17，Cocos 预览 + playwright-cli/Edge�
 
 T108 H5 实包全流程（2026-11-17）：用户手动构建成功，`build/web-desktop/assets/main/index.js` 修改时间13:45:37，包含当前 GameRoot/存档/奖励展示。`serve-web.ps1` 启动仅本机 HTTP 服务，访问 `http://127.0.0.1:8123/` 返回200。`build/scripts/verify-web.js` 在新建 Edge 会话中执行，使用 Camera.worldToScreen + canvas 矩形定位 START，仅读 Snapshot/Label，鼠标点击与15次合法键盘操作走通：开始 REV0 → 普通战斗 REV2 → 奖励 REV6 → 选 Red Strike、牌组+1、地图 REV7 → boss REV9 → 第3回合胜利 REV17（红 HP17、蓝 HP30）。浏览器 console/pageerror 和 HTTP 错误均0；另实测结算后冻结、R 重开 MAP/REV0。证据：`H5-AC2.json` 与 `H5-{StartMenu,NormalBattle,Reward,BossBattle,Victory}.png`。**AC-2 通过；用户已确认 Q-5 为仅本机静态托管、不上传外部站点，并授权创建本地 Git 检查点（不 push）；T108 已勾选。** 默认 HTML 容器1280×960未改，验收视口1280×1080，小窗口可能需要滚动；设计分辨率仍1280×720/policy4。手机触控及外网部署不在本次验证中。
 
+T110/T111 真实 Web 包联合复验（2026-11-17）：用户重新构建，`assets/main/index.js` 修改时间15:50:31（40518字节），包含MapPage/floorCount/completedMaps。`serve-web.ps1` 本机服务HTTP200；新建Edge会话 `t111-web` 打开 `http://127.0.0.1:8123/`，执行 `$code=Get-Content build/scripts/verify-web.js -Raw -Encoding UTF8; playwright-cli -s=t111-web run-code $code`。81次真实鼠标操作、0次键盘完成节点信息/非相邻拒绝/画布右键抑制、两步出牌与错误目标/取消、定向防御、战斗读档、普通奖励、逐层boss、2/3层地图中心与独立访问状态、层间读档→第3层最终胜利REV53（红HP17、蓝HP30）→重开MAP/REV0。console/pageerror/HTTP错误均0，结果 `AC-15~21 WEB PASS`（source=web-build）。证据 `Floors-AC15-21.json` 与 `Floors-{MapInfo,Battle,SelectedCard,Reward,Floor2,Floor3,Victory}.png`。37/37核心/交互/存档测试、三端adapter编译与分层检查通过；4/5层通关本次仅核心测试，未声称Web实测。T110/T111已完成；用户授权本次本地Git检查点（不push，按提交主题查找），T109未执行。设计分辨率仍1280×720/policy4，验收视口1280×1080，手机触控未验证。
+
 T002 Web 构建产物实测补充（2026-11-09）：
 
 - 产物 `src/settings.json`：`launchScene = db://assets/scenes/StartMenu.scene`、`designResolution = 1280×720 / policy 4`、`engine.debug = false`；`assets/main/config.json` 的 `scenes` 同时含 StartMenu 与 Placeholder，证明构建面板配置生效。
@@ -116,6 +120,8 @@ T002 Web 构建产物实测补充（2026-11-09）：
 | FR-15 | `core/` 格挡与伤害顺序 | T102 / T104 |
 | FR-16 | `core/` 休息节点复活与恢复 | T102 / T104 |
 | FR-17 | `core/` 奖励候选与选牌 | T102 / T104 |
+| FR-18 | `game/GameRoot` 分页与鼠标命中、`game/BattleSelection` 临时选择、`platform/web` 右键菜单抑制；纯 TS 单测与真实鼠标浏览器验收（AC-15~18） | T110 / T109 |
+| FR-19 | `core/state/engine/snapshot/save` 楼层配置/逐层boss/层间保留/schema2迁移，`game` 配置与页面刷新；floors.test.ts、verify-web.js（AC-19~21） | T111 / T109 |
 
 > FR-8 ~ FR-17 均为 `core/` 纯 TS 规则（Q-1 玩法设定，spec §1.1/§1.2），由 T102 定义类型、T104 实现确定性推进并补单测、T109 按 AC-7 ~ AC-14 验收。T106 只负责渲染 `Snapshot`，不承载规则。
 
@@ -167,3 +173,6 @@ R-1 未通过时，不得进入 M1 实现任务，先修订宪法 C-2 / C-3。**
 | 2026-11-17 | T106 完成并勾选：`assets/game/GameSession.ts`（state 仅经 core.advance 变更）+ `GameRoot.ts`（动态 UI 渲染 Snapshot + 键盘输入转发）；StartMenu 点击 START 动态挂载；新增 check-layering.ps1（AC-4 + dispatch-only 检查）。Cocos 预览 + Edge 实测 START→移动→战斗画面渲染、0 console 错误，截图 CoreGame-Battle.png 入库；Q-2 未改；§6 R-2 更新为已验证通过 |
 | 2026-11-17 | T107 完成并勾选：SaveData 加 rngState + StatefulRng；GameSession 注入 StoragePort 实现 load/save/dispatch-写盘/clearSave；GameRoot 拆 configure(storage)；StartMenu 组合根注入 Web adapter。Q-3/Q-8 关闭回填 spec §7。tests/game/save.test.ts 5 用例 + 21/21 全过；浏览器实测 REV2/REV3 读回一致，截图 SaveRestore-AC3.png 入库 |
 | 2026-11-17 | T108 完成并勾选：用户手动 Web 构建；真实包经本机静态服务与 Edge 的15次合法键盘输入完成普通战斗→奖励→boss→胜利 REV17，console/pageerror/HTTP 错误0。补齐奖励/结算 UI，入库 verify-web.js、H5-AC2.json 与五阶段截图。21/21 测试及分层检查通过；根 tsc 的既有扩展错误仍保留。用户确认 Q-5 仅本地托管，并授权本地 Git 检查点、不 push；T109 尚未执行 |
+| 2026-11-17 | 用户新增鼠标交互需求，插入 T110（FR-18/AC-15~18）并暂停 T109。已实现独立页面/敌左我右/两步选卡/地图左右键/鼠标按钮，新增 BattleSelection 与7条测试（28/28全过）；修正 fitWidth 鼠标命中坐标偏移，右键菜单生命周期在 Web 层。35次鼠标、0次键盘在桌面预览完成一局、读档和重开，0浏览器/HTTP错误，证据 MousePreview-*。实际 Web 包尚未重建，T110 仍未勾选、未提交 |
+| 2026-11-17 | 用户人工验收鼠标交互后要求继续T111。已实现3/4/5层配置（默认3）、非最终boss原子切层、HP/死亡/牌组延续、独立历史地图与schema2/旧单层迁移，Inspector配置及层号UI。新增9条多层测试，共37/37通过。默认3层预览81次鼠标完成各层boss/层间读档/最终胜利REV53/重开，0console/pageerror/HTTP错误，证据FloorsPreview-*；修复START事件穿透。真实Web包待用户重新Build复验，T110/T111尚未提交，T109未执行 |
+| 2026-11-17 | 用户重新Build后T110/T111实包联合复验通过：新Edge会话81次鼠标、0键盘走通默认3层至胜利REV53、层间读档和重开，console/pageerror/HTTP错误0。Floors-AC15-21.json及七张阶段截图记录source=web-build；37/37测试、三端类型/分层/IDE诊断通过。4/5层仅核心测试，不声称Web实测。T110/T111已勾选但未提交，T109未执行 |

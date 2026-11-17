@@ -1,37 +1,20 @@
-// GameRoot (T106): Cocos component that bridges platform input to core and
-// renders Snapshot. It NEVER touches GameState directly (AC-4): all changes go
-// through GameSession.dispatch -> core.advance. Only `cc` is imported here;
-// browser and native globals belong only to the assets/platform layer.
 import {
-    _decorator,
-    Component,
-    Color,
-    EventKeyboard,
-    Graphics,
-    input,
-    Input,
-    KeyCode,
-    Label,
-    Layers,
-    Node,
-    UITransform,
-    Vec3,
+    _decorator, Canvas, Color, Component, EventKeyboard, EventMouse, Graphics,
+    input, Input, KeyCode, Label, Layers, Node, UITransform, Vec3,
 } from 'cc';
-import type { GameConfig, Snapshot, HexCoord, StoragePort } from '../core';
+import { hexDistance } from '../core';
+import type { CardDef, GameConfig, GameInput, HexCoord, MapNode, Snapshot, StoragePort } from '../core';
+import { BattleSelection } from './BattleSelection';
+import type { BattleTarget } from './BattleSelection';
 import { GameSession } from './GameSession';
 
-const { ccclass } = _decorator;
+const { ccclass, property } = _decorator;
 
-function defaultConfig(seed: number): GameConfig {
+function defaultConfig(seed: number, floorCount: number): GameConfig {
+    if (floorCount !== 3 && floorCount !== 4 && floorCount !== 5) throw new Error('层数必须是3、4或5');
     return {
-        seed,
-        mapRadius: 2,
-        startHp: 30,
-        energyPerTurn: 1,
-        drawPerTurn: 5,
-        restHeal: 10,
-        rewardCount: 3,
-        restNodes: 1,
+        seed, floorCount, mapRadius: 2, startHp: 30, energyPerTurn: 1, drawPerTurn: 5,
+        restHeal: 10, rewardCount: 3, restNodes: 1,
         cardDefs: [
             { id: 'r-atk', name: 'Red Strike', color: 'red', cost: 1, effect: { kind: 'attack', damage: 4 } },
             { id: 'r-def', name: 'Red Guard', color: 'red', cost: 1, effect: { kind: 'defend', block: 3 } },
@@ -39,264 +22,430 @@ function defaultConfig(seed: number): GameConfig {
             { id: 'b-def', name: 'Blue Guard', color: 'blue', cost: 1, effect: { kind: 'defend', block: 3 } },
         ],
         startingDeck: ['r-atk', 'b-atk', 'r-def', 'b-def', 'r-atk', 'b-atk'],
-        enemies: [
-            { id: 'normal', hp: 12, damage: 3 },
-            { id: 'boss', hp: 24, damage: 5 },
-        ],
+        enemies: [{ id: 'normal', hp: 12, damage: 3 }, { id: 'boss', hp: 24, damage: 5 }],
     };
 }
 
 const C = {
-    bg: new Color(20, 22, 30, 255),
-    text: new Color(235, 238, 245, 255),
-    dim: new Color(150, 156, 170, 255),
-    red: new Color(230, 90, 90, 255),
-    blue: new Color(90, 150, 235, 255),
-    green: new Color(110, 200, 130, 255),
-    gold: new Color(240, 200, 90, 255),
-    grid: new Color(90, 96, 120, 255),
+    bg: new Color(17, 23, 34), panel: new Color(28, 39, 55),
+    text: new Color(235, 240, 247), dim: new Color(144, 160, 181),
+    red: new Color(239, 111, 109), blue: new Color(112, 171, 244),
+    green: new Color(112, 210, 166), gold: new Color(246, 205, 112),
+    line: new Color(63, 81, 106), muted: new Color(47, 57, 73),
 };
+
+type Panel = { node: Node; graphics: Graphics; label: Label };
+type MapTile = { panel: Panel; coord: HexCoord };
 
 @ccclass('GameRoot')
 export class GameRoot extends Component {
+    @property({ range: [3, 5, 1], tooltip: '新局楼层数量：3、4或5；旧存档保留原有层数' })
+    floorCount = 3;
+
     private session!: GameSession;
     private storage!: StoragePort;
-    private readonly uiNodes: Node[] = [];
-    private mapGfx!: Graphics;
+    private readonly selection = new BattleSelection();
+    private mapPage!: Node;
+    private battlePage!: Node;
+    private rewardPage!: Node;
+    private settlementPage!: Node;
+    private mapBoard!: Node;
+    private mapInfo!: Panel;
+    private mapParty!: Panel;
+    private enemy!: Panel;
+    private readonly heroes: Panel[] = [];
+    private readonly handCards: Panel[] = [];
+    private readonly rewardCards: Panel[] = [];
+    private readonly mapTiles: MapTile[] = [];
+    private endTurn!: Panel;
+    private cancelButton!: Panel;
+    private restartButton!: Panel;
     private headerLabel!: Label;
-    private partyLabel!: Label;
-    private enemyLabel!: Label;
-    private handLabel!: Label;
     private hintLabel!: Label;
-    private selectedAlly = 0;
-    private readonly hexSize = 46;
+    private energyLabel!: Label;
+    private handLabel!: Label;
+    private settlementLabel!: Label;
+    private infoCoord: HexCoord | null = null;
+    private lastPhase: Snapshot['phase'] | null = null;
+    private lastFloor = 0;
+    private feedback = '';
+    private readonly hexSize = 58;
 
     onLoad(): void {
-        input.on(Input.EventType.KEY_DOWN, this.onKey, this);
         this.buildUi();
     }
 
-    onDestroy(): void {
-        input.off(Input.EventType.KEY_DOWN, this.onKey, this);
+    start(): void {
+        input.on(Input.EventType.MOUSE_UP, this.onMouse, this);
+        input.on(Input.EventType.KEY_DOWN, this.onKey, this);
     }
 
-    /** Composition root injects the platform StoragePort (T107 / FR-5). */
+    onDestroy(): void {
+        input.off(Input.EventType.MOUSE_UP, this.onMouse, this);
+        input.off(Input.EventType.KEY_DOWN, this.onKey, this);
+        this.selection.cancel();
+        for (const node of [this.mapPage, this.battlePage, this.rewardPage, this.settlementPage,
+            this.headerLabel.node, this.hintLabel.node, this.node.getChildByName('GameBg')]) {
+            if (node !== null) node.destroy();
+        }
+    }
+
     configure(storage: StoragePort): void {
         this.storage = storage;
-        this.session = GameSession.load(storage, defaultConfig(20261116));
-        this.session.save(); // persist immediately: fresh run or normalized loaded run
-        this.selectedAlly = 0;
+        this.session = GameSession.load(storage, defaultConfig(20261116, this.floorCount));
+        this.session.save();
+        this.selection.cancel();
+        this.lastFloor = 0;
         this.render();
     }
 
-    private makeLabel(name: string, parent: Node, x: number, y: number, w: number, h: number, size = 20): Label {
+    private createNode(name: string, parent: Node, x: number, y: number, width: number, height: number): Node {
         const node = new Node(name);
         node.layer = Layers.Enum.UI_2D;
+        node.setPosition(x, y);
+        node.addComponent(UITransform).setContentSize(width, height);
         node.setParent(parent);
-        node.setPosition(x, y, 0);
-        const ut = node.addComponent(UITransform);
-        ut.setContentSize(w, h);
+        return node;
+    }
+
+    private label(name: string, parent: Node, x: number, y: number, width: number, height: number,
+        text: string, size = 20): Label {
+        const node = this.createNode(name, parent, x, y, width, height);
         const label = node.addComponent(Label);
         label.fontSize = size;
-        label.lineHeight = size + 6;
+        label.lineHeight = size + 8;
         label.color = C.text;
-        label.string = '';
-        this.uiNodes.push(node);
+        label.overflow = Label.Overflow.SHRINK;
+        label.enableWrapText = true;
+        label.string = text;
         return label;
     }
 
+    private panel(name: string, parent: Node, x: number, y: number, width: number, height: number,
+        text = '', size = 20): Panel {
+        const node = this.createNode(name, parent, x, y, width, height);
+        const graphics = node.addComponent(Graphics);
+        const label = this.label('Text', node, 0, 0, width - 24, height - 18, text, size);
+        const result = { node, graphics, label };
+        this.paint(result, C.panel, C.line);
+        return result;
+    }
+
+    private paint(panel: Panel, fill: Color, border: Color, selected = false): void {
+        const size = panel.node.getComponent(UITransform)!.contentSize;
+        const g = panel.graphics;
+        g.clear();
+        g.fillColor = fill;
+        g.strokeColor = border;
+        g.lineWidth = selected ? 4 : 2;
+        g.roundRect(-size.width / 2, -size.height / 2, size.width, size.height, 12);
+        g.fill();
+        g.stroke();
+    }
+
     private buildUi(): void {
-        const canvas = this.node;
-        // background panel
-        const bg = new Node('GameBg');
-        bg.layer = Layers.Enum.UI_2D;
-        bg.setParent(canvas);
-        bg.setPosition(0, 0, 0);
-        const bgUt = bg.addComponent(UITransform);
-        bgUt.setContentSize(1280, 720);
-        const bgGfx = bg.addComponent(Graphics);
-        bgGfx.fillColor = C.bg;
-        bgGfx.rect(-640, -360, 1280, 720);
-        bgGfx.fill();
-        this.uiNodes.push(bg);
-
-        // map graphics (center-left)
-        const mapNode = new Node('MapGraphics');
-        mapNode.layer = Layers.Enum.UI_2D;
-        mapNode.setParent(canvas);
-        mapNode.setPosition(-40, 20, 0);
-        mapNode.addComponent(UITransform).setContentSize(560, 520);
-        this.mapGfx = mapNode.addComponent(Graphics);
-        this.uiNodes.push(mapNode);
-
-        this.headerLabel = this.makeLabel('Header', canvas, 0, 225, 1240, 40, 20);
-        this.partyLabel = this.makeLabel('Party', canvas, -470, 100, 330, 270, 18);
-        this.enemyLabel = this.makeLabel('Enemy', canvas, 470, 130, 330, 240, 18);
-        this.handLabel = this.makeLabel('Hand', canvas, 0, -205, 1240, 90, 18);
-        this.hintLabel = this.makeLabel('Hint', canvas, 0, -250, 1240, 36, 15);
-        this.hintLabel.color = C.dim;
-    }
-
-    private axialToPixel(c: HexCoord): Vec3 {
-        const s = this.hexSize;
-        return new Vec3(s * 1.732 * (c.q + c.r / 2), s * 1.5 * c.r, 0);
-    }
-
-    private drawHex(g: Graphics, x: number, y: number, r: number): void {
-        for (let i = 0; i < 6; i += 1) {
-            const a = (Math.PI / 180) * (60 * i - 30);
-            const px = x + r * Math.cos(a);
-            const py = y + r * Math.sin(a);
-            if (i === 0) g.moveTo(px, py);
-            else g.lineTo(px, py);
+        const bg = this.panel('GameBg', this.node, 0, 0, 1280, 720);
+        this.paint(bg, C.bg, C.bg);
+        this.mapPage = this.createNode('MapPage', this.node, 0, 0, 1280, 720);
+        this.battlePage = this.createNode('BattlePage', this.node, 0, 0, 1280, 720);
+        this.rewardPage = this.createNode('RewardPage', this.node, 0, 0, 1280, 720);
+        this.settlementPage = this.createNode('SettlementPage', this.node, 0, 0, 1280, 720);
+        this.headerLabel = this.label('Header', this.node, 0, 312, 1180, 42, '', 26);
+        this.hintLabel = this.label('Hint', this.node, -100, -320, 980, 40, '', 17);
+        this.hintLabel.color = C.gold;
+        this.mapBoard = this.createNode('MapBoard', this.mapPage, -190, 0, 660, 550);
+        this.label('Legend', this.mapPage, -190, 260, 660, 36, '金色 · 当前位置    蓝色 · 战斗    绿色 · 休息    红色 · BOSS', 17);
+        this.mapInfo = this.panel('NodeInfo', this.mapPage, 410, 60, 320, 340, '', 21);
+        this.mapParty = this.panel('PartySummary', this.mapPage, 410, -215, 320, 170, '', 19);
+        this.label('SideEnemy', this.battlePage, -390, 258, 300, 40, '敌 方', 24);
+        this.label('SideParty', this.battlePage, 375, 258, 420, 40, '我 方', 24);
+        this.enemy = this.panel('EnemyTarget', this.battlePage, -390, 100, 250, 235, '', 24);
+        for (let i = 0; i < 2; i += 1) {
+            this.heroes.push(this.panel(`HeroTarget_${i}`, this.battlePage, 255 + i * 230, 100, 205, 235, '', 22));
         }
-        g.close();
+        this.energyLabel = this.label('Energy', this.battlePage, 0, -45, 1160, 36, '', 19);
+        this.handLabel = this.label('Hand', this.battlePage, -400, -80, 310, 26, '', 15);
+        this.endTurn = this.panel('EndTurn', this.battlePage, 515, -320, 180, 46, '结束回合', 19);
+        this.cancelButton = this.panel('CancelCard', this.battlePage, 80, -80, 180, 34, '取消选牌', 16);
+        this.label('RewardTitle', this.rewardPage, 0, 180, 900, 60, '战斗胜利 · 选择一张卡牌加入牌组', 30);
+        for (let i = 0; i < 3; i += 1) {
+            this.rewardCards.push(this.panel(`RewardCard_${i}`, this.rewardPage, (i - 1) * 290, -25, 245, 300, '', 23));
+        }
+        this.settlementLabel = this.label('Settlement', this.settlementPage, 0, 65, 960, 250, '', 36);
+        this.restartButton = this.panel('Restart', this.settlementPage, 0, -160, 250, 60, '重新开始', 24);
+    }
+
+    private buildMap(s: Snapshot): void {
+        for (const tile of this.mapTiles) {
+            tile.panel.node.removeFromParent();
+            tile.panel.node.destroy();
+        }
+        this.mapTiles.length = 0;
+        for (const node of s.map.nodes) {
+            const p = this.axialToPixel(node.coord);
+            const panel = this.panel(`MapNode_${node.coord.q}_${node.coord.r}`, this.mapBoard,
+                p.x, p.y, this.hexSize * 1.732, this.hexSize * 2, '', 15);
+            this.mapTiles.push({ panel, coord: node.coord });
+        }
+    }
+
+    private axialToPixel(coord: HexCoord): Vec3 {
+        return new Vec3(this.hexSize * Math.sqrt(3) * (coord.q + coord.r / 2), this.hexSize * 1.5 * coord.r, 0);
+    }
+
+    private nodeName(node: MapNode): string {
+        return node.kind === 'boss' ? 'BOSS' : node.kind === 'battle' ? '战斗' : node.kind === 'rest' ? '休息' : '起点';
     }
 
     private drawMap(s: Snapshot): void {
-        const g = this.mapGfx;
-        g.clear();
-        g.lineWidth = 3;
-        for (const n of s.map.nodes) {
-            const p = this.axialToPixel(n.coord);
-            const here = n.coord.q === s.map.position.q && n.coord.r === s.map.position.r;
-            let color = C.grid;
-            if (n.kind === 'boss') color = C.red;
-            else if (n.kind === 'rest') color = C.green;
-            else if (n.kind === 'battle') color = C.blue;
-            if (here) color = C.gold;
-            g.strokeColor = color;
-            this.drawHex(g, p.x, p.y, this.hexSize * 0.86);
+        for (const tile of this.mapTiles) {
+            const node = s.map.nodes.find(n => n.coord.q === tile.coord.q && n.coord.r === tile.coord.r)!;
+            const here = hexDistance(tile.coord, s.map.position) === 0;
+            const inspecting = this.infoCoord !== null && hexDistance(tile.coord, this.infoCoord) === 0;
+            const border = here ? C.gold : node.kind === 'boss' ? C.red
+                : node.kind === 'rest' ? C.green : node.kind === 'battle' ? C.blue : C.line;
+            const g = tile.panel.graphics;
+            g.clear();
+            g.lineWidth = inspecting ? 4 : 2;
+            g.strokeColor = inspecting ? C.text : border;
+            g.fillColor = here ? new Color(77, 65, 39) : node.visited ? C.muted : C.panel;
+            const radius = this.hexSize * 0.9;
+            for (let i = 0; i < 6; i += 1) {
+                const angle = (60 * i - 30) * Math.PI / 180;
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+            }
+            g.close();
+            g.fill();
             g.stroke();
+            tile.panel.label.string = `${here ? '当前位置' : this.nodeName(node)}\n${tile.coord.q}, ${tile.coord.r}${node.visited && !here ? '\n已访问' : ''}`;
+            tile.panel.label.color = border;
         }
-        // start marker text is conveyed by color/legend; boss is red, current is gold.
+        this.mapInfo.node.active = this.infoCoord !== null;
+        if (this.infoCoord !== null) {
+            const node = s.map.nodes.find(n => hexDistance(n.coord, this.infoCoord!) === 0)!;
+            const distance = hexDistance(node.coord, s.map.position);
+            this.mapInfo.label.string = `${this.nodeName(node)}\n\n坐标  (${node.coord.q}, ${node.coord.r})\n${node.visited ? '已访问 · 不再触发' : '未访问'}\n\n${distance === 0 ? '你正在这里' : distance === 1 ? '相邻节点 · 右键移动' : '非相邻 · 无法直接移动'}`;
+            this.paint(this.mapInfo, C.panel, C.gold);
+        }
+        this.mapParty.label.string = '队伍状态\n' + s.party.map(hero =>
+            `${hero.color === 'red' ? '红' : '蓝'}  ${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}`).join('\n');
+    }
+
+    private cardText(card: CardDef): string {
+        const effect = card.effect.kind === 'attack' ? `造成 ${card.effect.damage} 点伤害` : `获得 ${card.effect.block} 点格挡`;
+        return `${card.name}\n\n${card.color === 'red' ? '红色' : '蓝色'}能量  ${card.cost}\n\n${effect}`;
     }
 
     private render(): void {
         const s = this.session.snapshot;
-        this.headerLabel.string = `ROGUE CARD  |  ${s.phase.toUpperCase()}  |  TURN ${s.turn}  |  REV ${s.revision}`;
-        this.partyLabel.string = this.renderParty(s);
-        this.enemyLabel.string = this.renderEnemy(s);
-        this.handLabel.string = this.renderHand(s);
-        this.hintLabel.string =
-            s.phase === 'map'
-                ? 'MOVE: arrows / Q,E   |   blue=battle green=rest red=boss gold=you'
-                : s.phase === 'battle'
-                  ? 'PLAY: 1-5   |   TAB target   |   SPACE end turn'
-                  : s.phase === 'reward'
-                    ? 'PICK REWARD: 1-3'
-                    : 'RESTART: R';
-        this.drawMap(s);
-    }
-
-    private renderParty(s: Snapshot): string {
-        const lines = ['PARTY (' + (this.selectedAlly + 1) + '/' + s.party.length + ' selected)'];
-        s.party.forEach((c, i) => {
-            const mark = i === this.selectedAlly ? '>' : ' ';
-            lines.push(`${mark} ${c.color.toUpperCase()} ${c.alive ? 'alive' : 'DEAD'} hp ${c.hp}/${c.maxHp} block ${c.block}`);
-        });
-        const e = s.energy;
-        lines.push(`ENERGY r${e.red} g${e.green} b${e.blue} w${e.white}`);
-        return lines.join('\n');
-    }
-
-    private renderEnemy(s: Snapshot): string {
-        if (s.enemy === null) return 'ENEMY: none';
-        const intent = s.enemy.intent.kind === 'attack' ? `attack ${s.enemy.intent.damage}` : 'none';
-        return `ENEMY ${s.enemy.id}\nhp ${s.enemy.hp}/${s.enemy.maxHp}\nintent: ${intent}`;
-    }
-
-    private renderHand(s: Snapshot): string {
-        if (s.phase === 'reward') {
-            const choices = s.rewardCandidates.map((card, i) => {
-                const effect = card.effect.kind === 'attack'
-                    ? `attack ${card.effect.damage}`
-                    : `block ${card.effect.block}`;
-                return `${i + 1}: ${card.name} [${card.color} ${card.cost}] ${effect}`;
-            });
-            return 'CHOOSE ONE REWARD\n' + choices.join('   |   ');
+        if (s.floor !== this.lastFloor) {
+            this.buildMap(s);
+            this.infoCoord = null;
+            this.selection.cancel();
+            this.lastFloor = s.floor;
         }
-        if (s.phase === 'victory') return 'VICTORY: boss defeated. Press R to start a new run.';
-        if (s.phase === 'defeat') return 'DEFEAT: no surviving teammates. Press R to try again.';
-        if (s.hand.length === 0) return 'HAND: (empty)   draw:' + s.drawCount + ' discard:' + s.discardCount;
-        const cards = s.hand.map((c, i) => `${i + 1}:${c.def.name}[${c.def.color} ${c.def.cost}]${c.playable ? '' : '!'}`);
-        return 'HAND ' + cards.join('  ') + '   draw:' + s.drawCount + ' discard:' + s.discardCount;
+        if (s.phase !== this.lastPhase) {
+            this.selection.cancel();
+            this.infoCoord = null;
+            this.lastPhase = s.phase;
+        }
+        this.selection.sync(s);
+        this.mapPage.active = s.phase === 'map';
+        this.battlePage.active = s.phase === 'battle';
+        this.rewardPage.active = s.phase === 'reward';
+        this.settlementPage.active = s.phase === 'victory' || s.phase === 'defeat';
+        const title = s.phase === 'map' ? '六边形地图' : s.phase === 'battle' ? '战斗'
+            : s.phase === 'reward' ? '战利品' : s.phase === 'victory' ? '胜利' : '失败';
+        this.headerLabel.string = `${title}   /   ${s.phase.toUpperCase()}   · 第 ${s.floor} / ${s.floorCount} 层   ${s.phase === 'battle' ? `· 第 ${s.turn} 回合` : ''}`;
+        if (s.phase === 'map') this.drawMap(s);
+        if (s.phase === 'battle') this.renderBattle(s);
+        for (let i = 0; i < this.rewardCards.length; i += 1) {
+            const card = s.rewardCandidates[i];
+            const panel = this.rewardCards[i]!;
+            panel.node.active = card !== undefined;
+            if (card !== undefined) {
+                panel.label.string = this.cardText(card) + '\n\n左键选择';
+                this.paint(panel, C.panel, card.color === 'red' ? C.red : C.blue);
+            }
+        }
+        if (this.settlementPage.active) {
+            this.settlementLabel.string = s.phase === 'victory' ? `VICTORY\n击败最终 BOSS，完成 ${s.floorCount} 层！` : 'DEFEAT\n全队阵亡，下次再战。';
+            this.settlementLabel.color = s.phase === 'victory' ? C.gold : C.red;
+        }
+        const selected = s.hand.find(card => card.uid === this.selection.selectedUid);
+        const help = s.phase === 'map' ? '左键节点 · 查看信息    右键节点 · 移动'
+            : s.phase === 'battle' ? selected === undefined ? '左键选择卡牌，再点击目标施放'
+                : selected.def.effect.kind === 'attack' ? '已选攻击牌 · 左键点击左侧怪物' : '已选防御牌 · 左键点击右侧队友'
+            : s.phase === 'reward' ? '左键选择一张奖励，返回地图' : '点击「重新开始」开启新的一局';
+        this.hintLabel.string = this.feedback || help;
+    }
+
+    private renderBattle(s: Snapshot): void {
+        const selected = s.hand.find(card => card.uid === this.selection.selectedUid);
+        if (s.enemy !== null) {
+            this.enemy.label.string = `${s.enemy.id === 'boss' ? 'BOSS' : '怪物'}\n\nHP ${s.enemy.hp}/${s.enemy.maxHp}\n\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`;
+            this.paint(this.enemy, new Color(52, 34, 43), selected?.def.effect.kind === 'attack' ? C.gold : C.red,
+                selected?.def.effect.kind === 'attack');
+        }
+        for (let i = 0; i < this.heroes.length; i += 1) {
+            const hero = s.party[i];
+            const panel = this.heroes[i]!;
+            panel.node.active = hero !== undefined;
+            if (hero === undefined) continue;
+            const color = hero.color === 'red' ? C.red : C.blue;
+            const target = hero.alive && selected?.def.effect.kind === 'defend';
+            panel.label.string = `${hero.color === 'red' ? '红色角色' : '蓝色角色'}\n\n${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}\n\n${hero.alive ? '点击可作为防御目标' : '不再产出能量'}`;
+            this.paint(panel, hero.alive ? C.panel : C.muted, target ? C.gold : color, target);
+        }
+        const e = s.energy;
+        this.energyLabel.string = `可用能量   红 ${e.red}   蓝 ${e.blue}   白 ${e.white}     ·     选牌后点击怪物 / 队友`;
+        this.handLabel.string = `手牌 ${s.hand.length}   抽牌 ${s.drawCount}   弃牌 ${s.discardCount}`;
+        while (this.handCards.length < s.hand.length) {
+            this.handCards.push(this.panel(`HandCard_${this.handCards.length}`, this.battlePage, 0, -198, 176, 190, '', 18));
+        }
+        const spacing = Math.min(205, 1060 / Math.max(s.hand.length, 1));
+        for (let i = 0; i < this.handCards.length; i += 1) {
+            const panel = this.handCards[i]!;
+            const card = s.hand[i];
+            panel.node.active = card !== undefined;
+            if (card === undefined) continue;
+            const chosen = this.selection.selectedUid === card.uid;
+            panel.node.setPosition((i - (s.hand.length - 1) / 2) * spacing, chosen ? -188 : -198);
+            panel.label.string = this.cardText(card.def) + `\n\n${chosen ? '已选择 · 点击目标' : card.playable ? '左键选择' : '能量不足'}`;
+            panel.label.color = card.playable ? C.text : C.dim;
+            this.paint(panel, card.playable ? C.panel : C.muted, chosen ? C.gold
+                : card.playable ? card.def.color === 'red' ? C.red : C.blue : C.line, chosen);
+        }
+        this.cancelButton.node.active = this.selection.selectedUid !== null;
+        this.paint(this.endTurn, new Color(45, 71, 62), C.green);
+    }
+
+    private dispatch(value: GameInput): void {
+        const result = this.session.dispatch(value);
+        this.feedback = result.lastRejection === null ? '' : value.type === 'move'
+            ? '无法移动：请选择相邻的地图节点' : '操作未生效：检查费用、目标或当前阶段';
+        if (result.lastRejection === null) this.selection.cancel();
+        this.render();
+    }
+
+    private selectCard(index: number): void {
+        const s = this.session.snapshot;
+        const card = s.hand[index];
+        if (card === undefined) return;
+        this.feedback = this.selection.select(s, card.uid) ? '' : '能量不足，无法选择这张牌';
+        this.render();
+    }
+
+    private target(value: BattleTarget): void {
+        const action = this.selection.resolve(this.session.snapshot, value);
+        if (action !== null) this.dispatch(action);
+        else {
+            this.feedback = this.selection.selectedUid === null ? '请先左键选择一张卡牌'
+                : '目标不适用：攻击牌点怪物，防御牌点存活队友';
+            this.render();
+        }
+    }
+
+    private restart(): void {
+        const phase = this.session.snapshot.phase;
+        if (phase !== 'victory' && phase !== 'defeat') return;
+        this.session.clearSave();
+        this.session = new GameSession(defaultConfig(20261116, this.floorCount), { storage: this.storage });
+        this.session.save();
+        this.selection.cancel();
+        this.infoCoord = null;
+        this.feedback = '';
+        this.buildMap(this.session.snapshot);
+        this.render();
+    }
+
+    private hit(node: Node, point: Vec3): boolean {
+        if (!node.activeInHierarchy) return false;
+        const transform = node.getComponent(UITransform)!;
+        const local = transform.convertToNodeSpaceAR(point);
+        const size = transform.contentSize;
+        return Math.abs(local.x) <= size.width / 2 && Math.abs(local.y) <= size.height / 2;
+    }
+
+    private mapHit(point: Vec3): HexCoord | null {
+        for (const tile of this.mapTiles) {
+            const local = tile.panel.node.getComponent(UITransform)!.convertToNodeSpaceAR(point);
+            const x = Math.abs(local.x);
+            const y = Math.abs(local.y);
+            const radius = this.hexSize * 0.9;
+            if (x <= Math.sqrt(3) * radius / 2 && y <= radius && x + Math.sqrt(3) * y <= Math.sqrt(3) * radius) {
+                return tile.coord;
+            }
+        }
+        return null;
+    }
+
+    private onMouse(event: EventMouse): void {
+        if (this.session === undefined || !this.enabledInHierarchy) return;
+        const location = event.getLocation();
+        const camera = this.node.getComponent(Canvas)?.cameraComponent;
+        if (camera === null || camera === undefined) return;
+        const point = camera.screenToWorld(new Vec3(location.x, location.y, 0));
+        point.z = 0;
+        const s = this.session.snapshot;
+        if (s.phase === 'map') {
+            const coord = this.mapHit(point);
+            if (coord === null) return;
+            if (event.getButton() === EventMouse.BUTTON_RIGHT) this.dispatch({ type: 'move', to: coord });
+            else if (event.getButton() === EventMouse.BUTTON_LEFT) {
+                this.infoCoord = coord;
+                this.feedback = '';
+                this.render();
+            }
+            return;
+        }
+        if (event.getButton() !== EventMouse.BUTTON_LEFT) return;
+        if (s.phase === 'battle') {
+            if (this.hit(this.endTurn.node, point)) { this.dispatch({ type: 'endTurn' }); return; }
+            if (this.hit(this.cancelButton.node, point)) {
+                this.selection.cancel(); this.feedback = ''; this.render(); return;
+            }
+            for (let i = 0; i < s.hand.length; i += 1) {
+                if (this.hit(this.handCards[i]!.node, point)) { this.selectCard(i); return; }
+            }
+            if (this.hit(this.enemy.node, point) && s.enemy !== null) {
+                this.target({ kind: 'enemy', id: s.enemy.id }); return;
+            }
+            for (let i = 0; i < s.party.length; i += 1) {
+                if (this.hit(this.heroes[i]!.node, point)) { this.target({ kind: 'ally', id: s.party[i]!.id }); return; }
+            }
+        } else if (s.phase === 'reward') {
+            for (let i = 0; i < s.rewardCandidates.length; i += 1) {
+                if (this.hit(this.rewardCards[i]!.node, point)) {
+                    this.dispatch({ type: 'chooseReward', defId: s.rewardCandidates[i]!.id }); return;
+                }
+            }
+        } else if (this.hit(this.restartButton.node, point)) this.restart();
     }
 
     private onKey(event: EventKeyboard): void {
-        if (this.session === undefined) return; // ignore input before configure()
+        if (this.session === undefined) return;
         const s = this.session.snapshot;
-        let changed = true;
-        switch (event.keyCode) {
-            case KeyCode.ARROW_UP:
-            case KeyCode.KEY_W:
-                this.session.dispatch({ type: 'move', to: this.step(s.map.position, 0, -1) });
-                break;
-            case KeyCode.ARROW_DOWN:
-            case KeyCode.KEY_S:
-                this.session.dispatch({ type: 'move', to: this.step(s.map.position, 0, 1) });
-                break;
-            case KeyCode.ARROW_LEFT:
-            case KeyCode.KEY_A:
-                this.session.dispatch({ type: 'move', to: this.step(s.map.position, -1, 0) });
-                break;
-            case KeyCode.ARROW_RIGHT:
-            case KeyCode.KEY_D:
-                this.session.dispatch({ type: 'move', to: this.step(s.map.position, 1, 0) });
-                break;
-            case KeyCode.KEY_Q:
-                this.session.dispatch({ type: 'move', to: this.step(s.map.position, 1, -1) });
-                break;
-            case KeyCode.KEY_E:
-                this.session.dispatch({ type: 'move', to: this.step(s.map.position, -1, 1) });
-                break;
-            case KeyCode.TAB:
-                this.selectedAlly = (this.selectedAlly + 1) % s.party.length;
-                break;
-            case KeyCode.SPACE:
-                this.session.dispatch({ type: 'endTurn' });
-                break;
-            case KeyCode.KEY_R:
-                if (s.phase === 'victory' || s.phase === 'defeat') {
-                    this.session.clearSave();
-                    this.session = new GameSession(defaultConfig(20261116), { storage: this.storage });
-                    this.session.save(); // persist the fresh run as the new baseline
-                    this.selectedAlly = 0;
-                }
-                break;
-            default: {
-                const digit = this.digitOf(event.keyCode);
-                if (digit >= 1 && digit <= 9) {
-                    const idx = digit - 1;
-                    if (s.phase === 'reward' && idx < s.rewardCandidates.length) {
-                        this.session.dispatch({ type: 'chooseReward', defId: s.rewardCandidates[idx]!.id });
-                    } else if (s.phase === 'battle' && idx < s.hand.length) {
-                        const card = s.hand[idx]!;
-                        const target = s.party[this.selectedAlly]!;
-                        this.session.dispatch({
-                            type: 'playCard',
-                            uid: card.uid,
-                            targetId: card.def.effect.kind === 'defend' ? target.id : undefined,
-                        });
-                    } else {
-                        changed = false;
-                    }
-                } else {
-                    changed = false;
-                }
-                break;
+        const directions: { [key: number]: HexCoord } = {
+            [KeyCode.ARROW_UP]: { q: 0, r: -1 }, [KeyCode.ARROW_DOWN]: { q: 0, r: 1 },
+            [KeyCode.ARROW_LEFT]: { q: -1, r: 0 }, [KeyCode.ARROW_RIGHT]: { q: 1, r: 0 },
+            [KeyCode.KEY_Q]: { q: 1, r: -1 }, [KeyCode.KEY_E]: { q: -1, r: 1 },
+        };
+        const delta = directions[event.keyCode];
+        if (delta !== undefined && s.phase === 'map') {
+            this.dispatch({ type: 'move', to: { q: s.map.position.q + delta.q, r: s.map.position.r + delta.r } });
+        } else if (event.keyCode === KeyCode.SPACE && s.phase === 'battle') this.dispatch({ type: 'endTurn' });
+        else if (event.keyCode === KeyCode.ESCAPE) {
+            this.selection.cancel(); this.infoCoord = null; this.feedback = ''; this.render();
+        } else if (event.keyCode === KeyCode.KEY_R) this.restart();
+        else if (event.keyCode >= 49 && event.keyCode <= 57) {
+            const index = event.keyCode - 49;
+            if (s.phase === 'battle') this.selectCard(index);
+            else if (s.phase === 'reward' && s.rewardCandidates[index] !== undefined) {
+                this.dispatch({ type: 'chooseReward', defId: s.rewardCandidates[index]!.id });
             }
         }
-        if (changed) this.render();
-    }
-
-    private digitOf(code: KeyCode): number {
-        // KEY_0..KEY_9 are ASCII 48..57 in Cocos KeyCode.
-        const n = code as number;
-        return n >= 48 && n <= 57 ? n - 48 : -1;
-    }
-
-    private step(from: HexCoord, dq: number, dr: number): HexCoord {
-        return { q: from.q + dq, r: from.r + dr };
     }
 }
