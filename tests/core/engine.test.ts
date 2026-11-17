@@ -197,26 +197,139 @@ test('AC-9: two heroes produce 1 red + 1 blue at battle start', () => {
     assert.equal(inBattle.energy.blue, 1);
 });
 
-test('AC-10: same-color enough; white fills gap; insufficient rejected with unchanged state', () => {
-    const init = start(4);
-    const neighbor = init.state.map.nodes.find(
-        (n) => n.kind === 'battle' && hexDistance(n.coord, init.state.position) === 1,
-    )!;
-    let s = stepTo(init.state, neighbor.coord, makeCtx(4)).state;
+test('T114/AC-10: same color takes priority, white fills only the gap, other colors never pay', () => {
+    const cases = [
+        { red: 3, white: 4, accepted: true, remainingRed: 1, remainingWhite: 4 },
+        { red: 1, white: 4, accepted: true, remainingRed: 0, remainingWhite: 3 },
+        { red: 0, white: 2, accepted: true, remainingRed: 0, remainingWhite: 0 },
+        { red: 1, white: 0, accepted: false, remainingRed: 1, remainingWhite: 0 },
+        { red: 0, white: 1, accepted: false, remainingRed: 0, remainingWhite: 1 },
+    ];
+    for (const entry of cases) {
+        const rng = createSeededRng(4);
+        const ctx: CoreContext = { clock: createFixedClock(0), rng };
+        const base = makeConfig(4);
+        const config: GameConfig = { ...base, enemies: [{ ...base.enemies[0]!, hp: 100 }, base.enemies[1]!] };
+        const initial = initGame(config, ctx).state;
+        const node = initial.map.nodes.find(n => n.kind === 'battle' && hexDistance(n.coord, initial.position) === 1)!;
+        const entered = stepTo(initial, node.coord, ctx).state;
+        const state: GameState = { ...entered, energy: { red: entry.red, green: 7, blue: 9, white: entry.white } };
+        const card = state.deck.hand.find(c => c.defId === 'white-cost')!;
+        const before = buildSnapshot(state);
+        const original = JSON.stringify(state);
+        const rngBefore = rng.getState();
+        assert.equal(before.hand.find(c => c.uid === card.uid)!.playable, entry.accepted);
+        const result = advance(state, { type: 'playCard', uid: card.uid }, ctx);
+        assert.equal(JSON.stringify(state), original);
+        assert.equal(rng.getState(), rngBefore);
+        assert.deepEqual(result.state.energy,
+            { red: entry.remainingRed, green: 7, blue: 9, white: entry.remainingWhite });
+        if (entry.accepted) {
+            assert.equal(result.snapshot.lastRejection, null);
+            assert.equal(result.state.phase, 'battle');
+            assert.equal(result.state.revision, state.revision + 1);
+            assert.equal(result.state.battle!.enemy.hp, state.battle!.enemy.hp - CARDS.whiteAtk.effect.damage);
+            assert.deepEqual(result.state.party, state.party);
+            assert.deepEqual(result.state.deck.hand, state.deck.hand.filter(c => c.uid !== card.uid));
+            assert.deepEqual(result.state.deck.discardPile, [...state.deck.discardPile, card]);
+            assert.deepEqual(result.state.deck.drawPile, state.deck.drawPile);
+            assert.deepEqual(result.state.deck.exhaustPile, state.deck.exhaustPile);
+        } else {
+            assert.equal(result.snapshot.lastRejection, 'insufficient energy');
+            assert.equal(result.state, state);
+            assert.equal(result.state.revision, state.revision);
+            assert.deepEqual({ ...result.snapshot, lastRejection: null }, before);
+        }
+    }
+});
 
-    // craft a controlled hand: a 2-cost red + 1 white energy? no white source -> insufficient
-    const costly = s.deck.hand.find((c) => c.defId === 'white-cost');
-    if (costly === undefined) throw new Error('starting deck should contain the 2-cost red card');
-    const noWhite = advance(s, { type: 'playCard', uid: costly.uid }, makeCtx(4));
-    assert.ok(noWhite.snapshot.lastRejection !== null);
-    assert.equal(noWhite.state, s);
+test('T114/AC-9: endTurn discards surplus energy and produces only surviving colors without accumulation', () => {
+    for (const scenario of ['both-alive', 'red-dead', 'blue-dead', 'red-dies-this-turn']) {
+        const rng = createSeededRng(3);
+        const ctx: CoreContext = { clock: createFixedClock(0), rng };
+        const initial = initGame(makeConfig(3), ctx).state;
+        const node = initial.map.nodes.find(n => n.kind === 'battle' && hexDistance(n.coord, initial.position) === 1)!;
+        const entered = stepTo(initial, node.coord, ctx).state;
+        let state: GameState = { ...entered,
+            party: entered.party.map(hero => {
+                const dead = scenario === 'red-dead' && hero.color === 'red'
+                    || scenario === 'blue-dead' && hero.color === 'blue';
+                return { ...hero, hp: dead ? 0 : scenario === 'red-dies-this-turn' && hero.color === 'red' ? 2 : hero.hp,
+                    alive: !dead };
+            }),
+            energy: { red: 11, green: 13, blue: 17, white: 19 },
+        };
+        const expected = { red: scenario === 'red-dead' || scenario === 'red-dies-this-turn' ? 0 : 1,
+            green: 0, blue: scenario === 'blue-dead' ? 0 : 1, white: 0 };
+        for (let turn = 0; turn < 3; turn += 1) {
+            const original = JSON.stringify(state);
+            const result = advance(state, { type: 'endTurn' }, ctx);
+            assert.equal(result.snapshot.lastRejection, null);
+            assert.equal(result.state.phase, 'battle');
+            assert.equal(result.state.revision, state.revision + 1);
+            assert.equal(result.state.battle!.turn, state.battle!.turn + 1);
+            assert.deepEqual(result.state.energy, expected);
+            assert.deepEqual(result.snapshot.energy, expected);
+            assert.equal(JSON.stringify(state), original);
+            state = result.state;
+        }
+    }
+});
 
-    // inject white energy via a new state (white payment rule, FR-11)
-    s = { ...s, energy: { red: 0, green: 0, blue: 0, white: 2 } };
-    const paid = advance(s, { type: 'playCard', uid: costly.uid }, makeCtx(4));
-    assert.equal(paid.snapshot.lastRejection, null);
-    assert.equal(paid.state.energy.white, 0);
-    assert.equal(paid.state.energy.red, 0);
+test('T114/AC-11: red dies through enemy damage, keeps every card UID in circulation and cannot pay red cards', () => {
+    const rng = createSeededRng(2);
+    const ctx: CoreContext = { clock: createFixedClock(0), rng };
+    const config: GameConfig = { ...makeConfig(2), drawPerTurn: 1 };
+    const initial = initGame(config, ctx).state;
+    const node = initial.map.nodes.find(n => n.kind === 'battle' && hexDistance(n.coord, initial.position) === 1)!;
+    const entered = stepTo(initial, node.coord, ctx).state;
+    const injured: GameState = { ...entered, party: entered.party.map(hero =>
+        hero.color === 'red' ? { ...hero, hp: 2 } : hero) };
+    const allCards = (state: GameState) => [...state.deck.drawPile, ...state.deck.hand,
+        ...state.deck.discardPile, ...state.deck.exhaustPile].sort((a, b) => a.uid.localeCompare(b.uid));
+    const cards = allCards(injured);
+    const original = JSON.stringify(injured);
+    const died = advance(injured, { type: 'endTurn' }, ctx);
+    assert.equal(died.snapshot.lastRejection, null);
+    assert.equal(JSON.stringify(injured), original);
+    let state = died.state;
+    const tracked = state.deck.drawPile.find(card =>
+        config.cardDefs.find(def => def.id === card.defId)!.color === 'red');
+    if (tracked === undefined) throw new Error('A dead red hero card must remain in the draw pile to track its complete cycle');
+    const seenZones = new Set<string>();
+    let rejectedCards = 0;
+    for (let turn = 0; turn < 8; turn += 1) {
+        assert.equal(state.phase, 'battle');
+        assert.equal(state.party.find(hero => hero.color === 'red')!.alive, false);
+        assert.equal(state.party.find(hero => hero.color === 'red')!.hp, 0);
+        assert.deepEqual(state.energy, { red: 0, green: 0, blue: 1, white: 0 });
+        assert.deepEqual(allCards(state), cards);
+        assert.equal(cards.length, config.startingDeck.length);
+        for (const zone of ['drawPile', 'hand', 'discardPile'] as const) {
+            if (state.deck[zone].some(card => card.uid === tracked.uid)) seenZones.add(zone);
+        }
+        const before = buildSnapshot(state);
+        for (const card of before.hand.filter(card => card.def.color === 'red')) {
+            assert.equal(card.playable, false);
+            const rngBefore = rng.getState();
+            const originalState = JSON.stringify(state);
+            const result = advance(state, { type: 'playCard', uid: card.uid, targetId: 'hero-blue' }, ctx);
+            assert.equal(result.snapshot.lastRejection, 'insufficient energy');
+            assert.equal(result.state, state);
+            assert.equal(result.state.revision, state.revision);
+            assert.equal(JSON.stringify(state), originalState);
+            assert.equal(rng.getState(), rngBefore);
+            assert.deepEqual({ ...result.snapshot, lastRejection: null }, before);
+            rejectedCards += 1;
+        }
+        if (turn < 7) {
+            const next = advance(state, { type: 'endTurn' }, ctx);
+            assert.equal(next.snapshot.lastRejection, null);
+            state = next.state;
+        }
+    }
+    assert.ok(rejectedCards > 0);
+    assert.deepEqual([...seenZones].sort(), ['discardPile', 'drawPile', 'hand']);
 });
 
 // ---- AC-12: enemy intent + block targeting ----

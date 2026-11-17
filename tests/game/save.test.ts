@@ -258,3 +258,161 @@ test('T113/AC-8: used rest visits preserve injured HP and deck across reload wit
         }
     }
 });
+
+test('T114/AC-9: restored surplus energy is cleared on endTurn and never accumulates after reload', () => {
+    for (const scenario of ['both-alive', 'red-dead', 'blue-dead', 'red-dies-this-turn']) {
+        const storage = new MemoryStorage();
+        const config = makeConfig(3);
+        const initial = new GameSession(config, { storage, now: () => 100 });
+        enterFirstBattle(initial);
+        const data = GameSession.readSave(storage)!;
+        const controlled = { ...data, state: { ...data.state,
+            energy: { red: 11, green: 13, blue: 17, white: 19 },
+            party: data.state.party.map(hero => {
+                const dead = scenario === 'red-dead' && hero.color === 'red'
+                    || scenario === 'blue-dead' && hero.color === 'blue';
+                return { ...hero, hp: dead ? 0 : scenario === 'red-dies-this-turn' && hero.color === 'red' ? 2 : hero.hp,
+                    alive: !dead };
+            }),
+        } };
+        assert.equal(isSaveData(controlled), true);
+        let session = new GameSession(config, { storage, now: () => 100, restored: controlled });
+        session.save();
+        const expected = { red: scenario === 'red-dead' || scenario === 'red-dies-this-turn' ? 0 : 1,
+            green: 0, blue: scenario === 'blue-dead' ? 0 : 1, white: 0 };
+        for (let turn = 0; turn < 3; turn += 1) {
+            const before = session.snapshot;
+            const writes = storage.writes;
+            const next = session.dispatch({ type: 'endTurn' });
+            assert.equal(next.lastRejection, null);
+            assert.equal(next.phase, 'battle');
+            assert.equal(next.revision, before.revision + 1);
+            assert.equal(next.turn, before.turn + 1);
+            assert.deepEqual(next.energy, expected);
+            assert.equal(storage.writes, writes + 1);
+            const saved = GameSession.readSave(storage)!;
+            assert.deepEqual(saved.state.energy, expected);
+            assert.equal(saved.state.revision, next.revision);
+            session = GameSession.load(storage, config, () => 100);
+            assert.deepEqual(session.snapshot, next);
+            assert.equal(storage.writes, writes + 1);
+        }
+    }
+});
+
+test('T114/AC-10: cost-two payment saves exactly once, insufficient color-plus-white never writes', () => {
+    const costly = { ...CARDS.redAtk, id: 'red-cost-two', cost: 2 };
+    const base = makeConfig(4);
+    const config: GameConfig = { ...base, cardDefs: [...base.cardDefs, costly],
+        startingDeck: [costly.id, 'red-atk', 'red-def', 'blue-atk', 'blue-def'] };
+    const cases = [
+        { red: 3, white: 4, accepted: true, remainingRed: 1, remainingWhite: 4 },
+        { red: 1, white: 4, accepted: true, remainingRed: 0, remainingWhite: 3 },
+        { red: 0, white: 2, accepted: true, remainingRed: 0, remainingWhite: 0 },
+        { red: 1, white: 0, accepted: false, remainingRed: 1, remainingWhite: 0 },
+        { red: 0, white: 1, accepted: false, remainingRed: 0, remainingWhite: 1 },
+    ];
+    for (const entry of cases) {
+        const storage = new MemoryStorage();
+        const initial = new GameSession(config, { storage, now: () => 100 });
+        enterFirstBattle(initial);
+        const data = GameSession.readSave(storage)!;
+        const controlled = { ...data, state: { ...data.state,
+            energy: { red: entry.red, green: 7, blue: 9, white: entry.white } } };
+        assert.equal(isSaveData(controlled), true);
+        const session = new GameSession(config, { storage, now: () => 100, restored: controlled });
+        session.save();
+        const before = session.snapshot;
+        const card = before.hand.find(card => card.def.id === costly.id)!;
+        assert.equal(card.playable, entry.accepted);
+        const savedBefore = storage.get(SAVE_KEY);
+        const writes = storage.writes;
+        const result = session.dispatch({ type: 'playCard', uid: card.uid });
+        assert.deepEqual(result.energy,
+            { red: entry.remainingRed, green: 7, blue: 9, white: entry.remainingWhite });
+        if (entry.accepted) {
+            assert.equal(result.lastRejection, null);
+            assert.equal(result.phase, 'battle');
+            assert.equal(result.revision, before.revision + 1);
+            assert.equal(result.enemy!.hp, before.enemy!.hp - costly.effect.damage);
+            assert.deepEqual(result.party, before.party);
+            assert.deepEqual(result.hand, before.hand.filter(c => c.uid !== card.uid).map(c => ({ ...c,
+                playable: c.def.color === 'red' ? entry.remainingRed + entry.remainingWhite >= c.def.cost
+                    : result.energy[c.def.color] + entry.remainingWhite >= c.def.cost })));
+            assert.equal(storage.writes, writes + 1);
+            const saved = GameSession.readSave(storage)!;
+            assert.deepEqual(saved.state.energy, result.energy);
+            assert.equal(saved.state.revision, result.revision);
+            assert.deepEqual(saved.state.deck.hand, data.state.deck.hand.filter(c => c.uid !== card.uid));
+            assert.deepEqual(saved.state.deck.discardPile,
+                [...data.state.deck.discardPile, data.state.deck.hand.find(c => c.uid === card.uid)!]);
+            assert.equal(saved.rngState, data.rngState);
+        } else {
+            assert.equal(result.lastRejection, 'insufficient energy');
+            assert.deepEqual({ ...result, lastRejection: null }, before);
+            assert.deepEqual(session.snapshot, before);
+            assert.equal(storage.get(SAVE_KEY), savedBefore);
+            assert.equal(storage.writes, writes);
+        }
+        const resumed = GameSession.load(storage, config, () => 100);
+        assert.deepEqual(resumed.snapshot, session.snapshot);
+        assert.equal(storage.writes, writes + (entry.accepted ? 1 : 0));
+    }
+});
+
+test('T114/AC-11: dead red cards cycle after reload; red card rejections preserve save bytes and future RNG', () => {
+    const storage = new MemoryStorage();
+    const config: GameConfig = { ...makeConfig(2), drawPerTurn: 1 };
+    const initial = new GameSession(config, { storage, now: () => 100 });
+    enterFirstBattle(initial);
+    const data = GameSession.readSave(storage)!;
+    const injured = { ...data, state: { ...data.state,
+        party: data.state.party.map(hero => hero.color === 'red' ? { ...hero, hp: 2 } : hero) } };
+    assert.equal(isSaveData(injured), true);
+    let session = new GameSession(config, { storage, now: () => 100, restored: injured });
+    const allCards = (deck: typeof data.state.deck) => [...deck.drawPile, ...deck.hand,
+        ...deck.discardPile, ...deck.exhaustPile].sort((a, b) => a.uid.localeCompare(b.uid));
+    const cards = allCards(injured.state.deck);
+    const tracked = cards.find(card => card.defId === 'red-atk')!;
+    const death = session.dispatch({ type: 'endTurn' });
+    assert.equal(death.lastRejection, null);
+    const seenZones = new Set<string>();
+    let rejectedCards = 0;
+    for (let turn = 0; turn < 8; turn += 1) {
+        const before = session.snapshot;
+        const writes = storage.writes;
+        session = GameSession.load(storage, config, () => 100);
+        assert.deepEqual(session.snapshot, before);
+        assert.equal(storage.writes, writes);
+        assert.equal(before.phase, 'battle');
+        assert.equal(before.party.find(hero => hero.color === 'red')!.alive, false);
+        assert.equal(before.party.find(hero => hero.color === 'red')!.hp, 0);
+        assert.deepEqual(before.energy, { red: 0, green: 0, blue: 1, white: 0 });
+        const saved = GameSession.readSave(storage)!;
+        assert.deepEqual(allCards(saved.state.deck), cards);
+        assert.equal(cards.length, config.startingDeck.length);
+        for (const zone of ['drawPile', 'hand', 'discardPile'] as const) {
+            if (saved.state.deck[zone].some(card => card.uid === tracked.uid)) seenZones.add(zone);
+        }
+        const bytes = storage.get(SAVE_KEY);
+        for (const card of before.hand.filter(card => card.def.color === 'red')) {
+            assert.equal(card.playable, false);
+            const result = session.dispatch({ type: 'playCard', uid: card.uid, targetId: 'hero-blue' });
+            assert.equal(result.lastRejection, 'insufficient energy');
+            assert.deepEqual({ ...result, lastRejection: null }, before);
+            assert.deepEqual(session.snapshot, before);
+            assert.equal(storage.get(SAVE_KEY), bytes);
+            assert.equal(storage.writes, writes);
+            rejectedCards += 1;
+        }
+        if (turn < 7) {
+            const control = new GameSession(config, { now: () => 100, restored: saved });
+            const next = session.dispatch({ type: 'endTurn' });
+            assert.equal(next.lastRejection, null);
+            assert.deepEqual(next, control.dispatch({ type: 'endTurn' }));
+            assert.equal(storage.writes, writes + 1);
+        }
+    }
+    assert.ok(rejectedCards > 0);
+    assert.deepEqual([...seenZones].sort(), ['discardPile', 'drawPile', 'hand']);
+});
