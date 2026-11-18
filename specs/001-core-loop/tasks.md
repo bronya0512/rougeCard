@@ -84,20 +84,23 @@
   验证：新增12条team-selection.test.ts，共49/49测试通过；包含人数/去重/顺序/起始牌、绿色付费/死亡、第三队友格挡、敌人按选择顺序攻击、选人不写档、三人读档/RNG/跨层与旧红蓝兼容。三端adapter编译/分层/IDE诊断/脚本语法通过；root tsc仍exit2（既有扩展错误），assets/tests诊断0。编辑器桌面预览108次鼠标、0键盘：空/1人无法开始→取消与蓝红两人六牌确认→完整3层胜利REV53（HP17/30）→结算返回组队保留旧档→绿红蓝三人九牌→绿色格挡施放给第三位蓝色角色→继续读档保持阵容/牌/进度；浏览器及HTTP错误0。证据TeamPreview-AC15-24.json与TeamPreview-*.png。三人本次预览验证初场战斗/读档，未声称三人完整3层通关。
   实包验证通过（2026-11-17）：用户重新Build，build/web-desktop/assets/main/index.js时间16:55:15、46817字节；本机静态服务http://127.0.0.1:8123/返回HTTP200。独立Edge会话t112-web执行verify-web.js（Get-Content -Raw -Encoding UTF8后playwright-cli run-code），结果AC-15~24 WEB PASS/source=web-build。108次真实鼠标、0键盘：空/1人禁开始、取消/去重、有序蓝红两人六牌→默认3层完整胜利REV53（HP17/30）与层间读档→重开组队保留旧档→绿红蓝三人九牌、绿色能量付费/格挡施放第三位蓝色队友→继续读档保持队伍/牌/进度；console/pageerror/HTTP错误0，画布右键菜单抑制通过。证据Team-AC15-24.json及Team-{Selection,MapInfo,Battle,SelectedCard,Reward,Floor2,Floor3,Victory,ThreeSelected,ThreeBattle}.png；原始日志temp/t112-web-browser.log。49/49测试及三端adapter类型检查复跑通过（temp/t112-web-tests.log），分层检查、修改源码IDE诊断、git diff --check通过。
   验证边界：实包完整通关为两人默认3层；三人实包验证初场战斗/读档，三人跨层和4/5层由核心测试覆盖，不声称三人或4/5层Web完整通关。AC-22~24已有单测与实包证据；用户现已授权本地提交并继续，T112勾选随本地Git检查点归档（提交主题feat(M1): close T112 - ordered team selection before new runs），不push。提交前49/49及三端adapter类型检查再次通过（temp/t109-tests.log）；接续仅T109最终验收，不实现其他任务。
-- [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-24，记录证据，打检查点
+- [x] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-24，记录证据，打检查点
   完成判据：全部验收项有证据；未通过项转为新 task 而非直接勾选。
   本轮审查（2026-11-17，基线T112检查点`55c498d`）：逐项检查现有测试正文及实包JSON/截图，不依据测试名称或WEB PASS标签推断完整覆盖。复跑`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`，49/49通过、三端adapter类型检查通过（`temp/t109-tests.log`）；`check-layering.ps1`全部通过，修改文件IDE诊断0，`node --check build/scripts/verify-web.js`通过。复核实包main/index.js仍为16:55:15/46817字节、HTTP200，使用已提交`Team-AC15-24.json`及截图，不声称本轮重新跑了浏览器全流程。根tsc既有扩展类型错误未修复，本轮未重跑根tsc。
-  结论（T118验证后更新）：按用户确认的M1口径，24项均有对应单测/实包证据；真实三端运行对照仍留到T202/T302。T109保持未勾选，最终验收需后续会话统一复核/收尾。T117检查点`2fa4461`已本地提交、未push；用户已授权本地提交T118，勾选随检查点归档；接续仅T109最终验收，不执行M2/M3。
+  结论（T109最终复核，2026-11-18，基线`09c03a7`）：按用户确认的M1口径，AC-1~24逐项证据复核与回归通过，无新增验收阻塞。T118检查点`09c03a7`已本地提交、未push；用户于2026-11-18确认人工验收通过并授权本地提交；T109勾选随最终Git检查点归档（提交主题chore(M1): close T109 - final acceptance），M1关闭，不push。真实三端运行对照仍留到T202/T302，不执行M2/M3或内容/美术feature。
   口径同步（2026-11-17）：用户选择“M1先验核心”，先更新spec FR-6/AC-1及后续真实三端验收，再同步plan映射与本表/T118/T202/T302；未改业务代码、未执行新增测试、未重新构建或浏览器验收。本次只同步T109验收基线，不勾选T109/T118；三份流程文档待提交，原49/49与实包证据保持历史范围。
   路线说明（2026-11-17）：应用户要求在plan§7.1～7.3补充项目制作到上线的Mermaid流程图、角色/怪物/配置/数值/美术接入与冻结时序。仅作为后续建议路线，不新增或勾选实现任务、不修改验收要求、不授权终版美术或部署；本轮无代码/资源改动，无需重新构建。流程图已人工核对节点与分支；未安装Mermaid渲染器，未验证渲染效果。
+  最终证据复核（2026-11-18）：逐项核对spec AC正文、现有测试实际断言、脚本操作和已提交JSON，不用测试名称或WEB PASS标签替代证据。AC-11下一场阵亡由floors.test.ts实际切层后进战斗补证、休息复活由engine.test.ts FR-16补证；AC-14重复运行/工厂恢复对照实际包含洗牌顺序；AC-16切换与死亡目标来自selection.test.ts，未冒称实包操作；AC-20各牌区UID（含消耗/奖励）由逐区精确断言覆盖；AC-21旧map/battle/victory/实际defeat组合完整。M0除延后T003均已勾选、plan Confirmed，按宪法v0.2继承已有实测前置。逐AC证据仍见下表，结构化汇总`M1Final-AC1-24.json`。
+  最终新跑验证：`test-core.ps1`74/74、三adapter ES2015严格类型检查通过（`temp/t109-final-tests.log`），4场景工厂报告与已提交`AdapterContract-AC1.json`逐字段一致；`check-layering.ps1`通过（`temp/t109-final-layering.log`）、assets/core/game/platform及tests诊断0、`node --check build/scripts/verify-web.js`通过。独立Edge会话`t109-final`访问`http://127.0.0.1:8123/?verify=t109`，`run-code --filename d:/dev/rougeCard/rougeCard/build/scripts/verify-web.js`结果AC-15~24 WEB PASS/source=web-build；108鼠标/0键盘，两人蓝红默认3层完整胜利REV53/HP17与30，重开组队保留旧档、绿红蓝三人初战绿色格挡第三队友与继续读档，首屏起完整控制台/页面/HTTP/requestfailed错误0。证据`M1Final-WebRegression.json`及10张`M1Final-*.png`，原始日志`temp/t109-final-browser.log`；本轮查看MapInfo/ThreeBattle截图核对四字段和三人表现。脚本只加T109独立证据前缀，原流程不变。
+  最终验证边界：当前实测Web包main/index.js更新于2026-11-18 17:02:13（46817字节），HTTP200；本会话未执行Build，使用现有构建产物并新跑浏览器，不再将它描述为11-17旧包。assets/依赖未改；本轮未重新跑所有历史浏览器专用分支，下表明确沿用已提交的T113/T115/T116/T117证据。三人完整/4或5层通关由单测/进程内契约支撑，实包完整通关为两人默认3层；AC-1不代表微信/Windows原生输入持久化或真机三端运行。根tsc既有扩展类型错误未修复、本轮未重跑；不宣称全根项目tsc通过。当前仅最终验收记录/脚本前缀/证据改动；用户已人工验收并授权本地提交，T109勾选随最终检查点归档，不push、不新增需求或执行下一feature。
 
   | AC | 核对结果 | 证据或尚缺断言 |
   |---|---|---|
   | AC-1 | T118进程内契约验证通过 | 既有core确定性证据保留；`tests/platform/adapter-contract.test.ts`实际调用web/wx/win工厂，4场景共144个固定S1输入/148个参考Snapshot，三端逐步序列化/完整存档/RNG一致；63个实际存储检查点恢复后缀与未中断运行一致。Web宿主只在测试安装/还原，wx/win仍为内存/no-op；`AdapterContract-AC1.json`明确source=node-process-contract、realPlatformValidation=false，不能替代T202/T302真机对照 |
-  | AC-2 | 已有证据 | `Team-AC15-24.json`两人默认3层普通战斗/奖励/boss/胜利，浏览器及HTTP错误0 |
-  | AC-3 | 已有证据 | `save.test.ts`最近存档与未来Snapshot；`Team-AC15-24.json`战斗、层间及三人初战继续读档 |
-  | AC-4 | 本轮通过 | `check-layering.ps1`：core/game禁用平台标识0、状态变更仅经dispatch；白名单见plan§3 |
-  | AC-5 | T116验证通过、T118回归通过 | 74/74全部通过，AC-7~14已有对应测试；实际victory/defeat分别覆盖全部5种GameInput、合法样式/不存在参数、连续2遍拒绝，完整state/revision/RNG不变；GameSession含结算读档后矩阵，拒绝零写盘/零删除/零时钟读取 |
+  | AC-2 | T109新跑通过 | `M1Final-WebRegression.json`当前真实包两人默认3层普通战斗/奖励/boss/胜利，完整控制台及HTTP/requestfailed错误0；原Team证据保留 |
+  | AC-3 | T109新跑通过 | `save.test.ts`最近存档与未来Snapshot；`M1Final-WebRegression.json`战斗、层间及三人初战继续读档一致 |
+  | AC-4 | T109新跑通过 | `check-layering.ps1`：core/game禁用平台标识0、状态变更仅经dispatch（`temp/t109-final-layering.log`）；白名单见plan§3 |
+  | AC-5 | T116验证通过、T109回归通过 | 74/74全部通过，AC-7~14已有对应测试；实际victory/defeat分别覆盖全部5种GameInput、合法样式/不存在参数、连续2遍拒绝，完整state/revision/RNG不变；GameSession含结算读档后矩阵，拒绝零写盘/零删除/零时钟读取 |
   | AC-6 | 已有证据 | M0阻塞项除延后T003外均已勾选、plan为Confirmed，按宪法v0.2 |
   | AC-7 | 已有证据 | `engine.test.ts`地图同seed一致、中心/唯一外圈boss/配置节点数、10seed不全相同 |
   | AC-8 | T113验证通过 | `engine.test.ts`3次重访已完成战斗/已用休息及移动拒绝，牌UID/HP/原state/RNG不变；`save.test.ts`读档重访仅写位置/revision，非法移动存档字节/写次数/RNG不变。实包`MapRevisit-AC8.json`52鼠标/0键盘、战斗3次/已用休息4次重访、6次读档；首次满血休息后战斗损血，重访始终HP27/30，页面/HTTP/请求失败与完整控制台错误0 |
@@ -107,10 +110,10 @@
   | AC-12 | T115验证通过 | `engine.test.ts`/`save.test.ts`格挡3对伤害2/3/5与红/蓝目标6分支，只有首位存活者受击、格挡先吸伤/次回合全部清零；实际首位死亡无伤害溢出且后续命中次位。`team-selection.test.ts`两种三人顺序各1/2位阵亡跳过，读档/单次写盘/后续结果一致。实包`BlockTarget-AC12.json`31鼠标/0键盘，boss伤害5格挡3经读档后HP27→25；实际首位死亡后读档，次位30→25，控制台及网络错误0 |
   | AC-13 | 已有证据 | `engine.test.ts`全灭失败/胜利/三张红蓝候选与选择+1，`Team-AC15-24.json`最终层胜利 |
   | AC-14 | 已有证据 | `engine.test.ts`弃牌洗回；同seed输入序列中的endTurn触发洗回并逐字段对比含手牌UID的Snapshot |
-  | AC-15 | 已有证据 | `Team-AC15-24.json`与`Team-Battle.png`独立战斗页、敌左我右、奖励回图和战斗读档 |
-  | AC-16 | 单测与主要实包分支有证据 | `selection.test.ts`切换/取消/死亡目标/清理；实包验证选牌不改状态或存档、错误目标、取消、定向施放。连续切牌/死亡目标来自单测，不写成已在实包操作 |
-  | AC-17 | 已有证据 | `Team-AC15-24.json`左查/右移/非相邻拒绝/右键菜单；本轮查看`Team-MapInfo.png`确认类型、坐标(0,-1)、未访问、相邻可右键移动四字段 |
-  | AC-18 | 已有证据 | `Team-AC15-24.json`108鼠标/0键盘，两人默认3层完整通关与鼠标重开组队 |
+  | AC-15 | T109新跑通过 | `M1Final-WebRegression.json`与`M1Final-Battle.png`独立战斗页、敌左我右、奖励回图和战斗读档 |
+  | AC-16 | 单测与主要实包分支通过 | `selection.test.ts`切换/取消/死亡目标/清理；T109实包验证选牌不改状态或存档、错误目标、取消、定向施放。连续切牌/死亡目标来自单测，不写成已在实包操作 |
+  | AC-17 | T109新跑通过 | `M1Final-WebRegression.json`左查/右移/非相邻拒绝/右键菜单；本轮查看`M1Final-MapInfo.png`确认类型、坐标(0,-1)、未访问、相邻可右键移动四字段 |
+  | AC-18 | T109新跑通过 | `M1Final-WebRegression.json`108鼠标/0键盘，两人默认3层完整通关与鼠标重开组队 |
   | AC-19 | T116补齐冻结验证 | 原有`floors.test.ts`3/4/5层通关/非法层数/切层revision，T116实际1/3/4/5层最终胜利及对应配置第1层失败，结算全输入冻结、读档与RNG不变。实包默认3层胜利与实际失败结算，24次旧控件坐标鼠标探测+32次键盘探测前后均保持Snapshot/存档，结算重开只开组队，确认才创建另一个新会话 |
   | AC-20 | 已有证据 | `floors.test.ts`HP/死亡/奖励与消耗区牌UID/手牌归弃/零能量格挡/独立历史地图；`Team-Floor2.png`、`Team-Floor3.png`与实包层间读档 |
   | AC-21 | T117补齐旧失败迁移 | `floors.test.ts`boss前后读档/RNG及旧map/battle/victory/坏档回退保留；新增实际两击全灭的旧defeat深冻结源对象迁移，全state/红蓝队伍/死亡/牌UID/RNG不变，fallback3/4/5仍单层失败，读档零写盘与显式schema2重存均通过。实包`LegacyDefeat-AC21.json`12鼠标/0键盘，两次继续旧defeat保持第1/1层/REV4/HP0与0/6牌，旧原始字节不改；确认重开后才替换为3层schema2新局 |

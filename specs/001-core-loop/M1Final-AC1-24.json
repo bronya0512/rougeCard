@@ -1,0 +1,282 @@
+﻿{
+    "result":  "T109 M1 AC-1~24 VERIFICATION PASS",
+    "task":  "T109",
+    "date":  "2026-11-18",
+    "baseline":  "09c03a7",
+    "checkpoint":  "User accepted and authorized local commit on 2026-11-18; T109 checked in the final checkpoint: chore(M1): close T109 - final acceptance",
+    "manualAcceptance":  "User confirmed acceptance on 2026-11-18; detailed manual operations were not specified.",
+    "criteriaPassed":  24,
+    "criteriaTotal":  24,
+    "tests":  {
+                  "passed":  74,
+                  "total":  74,
+                  "failed":  0,
+                  "adapterTypes":  "3 ES2015 adapters PASS",
+                  "log":  "temp/t109-final-tests.log"
+              },
+    "layering":  {
+                     "result":  "PASS",
+                     "log":  "temp/t109-final-layering.log"
+                 },
+    "web":  {
+                "result":  "AC-15~24 WEB PASS",
+                "source":  "web-build",
+                "url":  "http://127.0.0.1:8123/?verify=t109",
+                "mouseActions":  108,
+                "keyboardActions":  0,
+                "finalRevision":  53,
+                "finalPartyHp":  [
+                                     17,
+                                     30
+                                 ],
+                "errors":  [
+
+                           ],
+                "httpErrors":  [
+
+                               ],
+                "report":  "M1Final-WebRegression.json",
+                "log":  "temp/t109-final-browser.log",
+                "screenshots":  [
+                                    "M1Final-Battle.png",
+                                    "M1Final-Floor2.png",
+                                    "M1Final-Floor3.png",
+                                    "M1Final-MapInfo.png",
+                                    "M1Final-Reward.png",
+                                    "M1Final-SelectedCard.png",
+                                    "M1Final-Selection.png",
+                                    "M1Final-ThreeBattle.png",
+                                    "M1Final-ThreeSelected.png",
+                                    "M1Final-Victory.png"
+                                ]
+            },
+    "artifact":  {
+                     "path":  "build/web-desktop/assets/main/index.js",
+                     "modified":  "2026-11-18 17:02:13",
+                     "bytes":  46817,
+                     "sha256":  "5AC8BDAC204765F9A7B96F22000A05CEDF56F3A6085F8FF3D5445CF1A373B129",
+                     "rebuiltThisSession":  false
+                 },
+    "realThreePlatformRuntimeValidated":  false,
+    "boundaries":  [
+                       "M1 AC-1 is pure-core and one-process real adapter factory contract; Web host is simulated in tests, wx/win are existing memory/no-op implementations.",
+                       "Fresh browser full victory is two heroes and default three floors; three heroes are initial battle and reload. Four/five floors and complete three-hero runs are unit/process tests.",
+                       "Specialized prior mouse runs are reviewed historical evidence, not all rerun during T109.",
+                       "No assets, dependencies, constitution or spec changed. No deployment or push.",
+                       "Root tsc existing extension type errors were not fixed or rerun; scoped strict test/adapter compilation and IDE diagnostics passed."
+                   ],
+    "reviewedReports":  [
+                            {
+                                "file":  "Team-AC15-24.json",
+                                "result":  "AC-15~24 WEB PASS",
+                                "source":  "web-build",
+                                "execution":  "historical committed evidence, reviewed but not rerun"
+                            },
+                            {
+                                "file":  "MapRevisit-AC8.json",
+                                "result":  "T113 AC-8 WEB PASS",
+                                "source":  "web-build",
+                                "execution":  "historical committed evidence, reviewed but not rerun"
+                            },
+                            {
+                                "file":  "BlockTarget-AC12.json",
+                                "result":  "T115 AC-12 WEB PASS",
+                                "source":  "web-build",
+                                "execution":  "historical committed evidence, reviewed but not rerun"
+                            },
+                            {
+                                "file":  "SettlementFreeze-FR4.json",
+                                "result":  "T116 FR-4 WEB PASS",
+                                "source":  "web-build",
+                                "execution":  "historical committed evidence, reviewed but not rerun"
+                            },
+                            {
+                                "file":  "LegacyDefeat-AC21.json",
+                                "result":  "T117 AC-21 WEB PASS",
+                                "source":  "web-build",
+                                "execution":  "historical committed evidence, reviewed but not rerun"
+                            },
+                            {
+                                "file":  "AdapterContract-AC1.json",
+                                "result":  "T118 M1 AC-1 CONTRACT PASS",
+                                "source":  "node-process-contract",
+                                "execution":  "fresh T109 test reports compared with this committed report"
+                            },
+                            {
+                                "file":  "M1Final-WebRegression.json",
+                                "result":  "AC-15~24 WEB PASS",
+                                "source":  "web-build",
+                                "execution":  "fresh T109 browser run"
+                            }
+                        ],
+    "acceptance":  [
+                       {
+                           "id":  "AC-1",
+                           "criterion":  "AC-1（M1核心与进程内契约）：给定相同seed、配置、时间输入与输入序列S1，核心重复运行的每一步序列化`Snapshot`逐字段一致；在同一测试运行环境实际使用Web/微信小游戏/Windows三个适配器时，每一步结果仍一致。经各自存储保存并恢复后，用相同后续输入继续运行，`Snapshot`与随机序列续接结果与未中断运行一致。必须有核心确定性及三适配器契约测试；仅类型检查或重复运行核心不能替代后者。真实三端对照按§6后续验收，不作为M1阻塞项。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T118进程内契约验证通过",
+                           "evidence":  "既有core确定性证据保留；`tests/platform/adapter-contract.test.ts`实际调用web/wx/win工厂，4场景共144个固定S1输入/148个参考Snapshot，三端逐步序列化/完整存档/RNG一致；63个实际存储检查点恢复后缀与未中断运行一致。Web宿主只在测试安装/还原，wx/win仍为内存/no-op；`AdapterContract-AC1.json`明确source=node-process-contract、realPlatformValidation=false，不能替代T202/T302真机对照"
+                       },
+                       {
+                           "id":  "AC-2",
+                           "criterion":  "AC-2：Web 构建产物可通过本地静态服务器访问，在浏览器中完成「开始 → 地图移动 → 普通战斗 → 选奖励 → boss 战 → 结算」全流程，浏览器控制台无错误。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T109新跑通过",
+                           "evidence":  "`M1Final-WebRegression.json`当前真实包两人默认3层普通战斗/奖励/boss/胜利，完整控制台及HTTP/requestfailed错误0；原Team证据保留"
+                       },
+                       {
+                           "id":  "AC-3",
+                           "criterion":  "AC-3：退出后重新进入，读回的本局状态与退出前最近一次存档一致（存档时机见 Q-8）。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T109新跑通过",
+                           "evidence":  "`save.test.ts`最近存档与未来Snapshot；`M1Final-WebRegression.json`战斗、层间及三人初战继续读档一致"
+                       },
+                       {
+                           "id":  "AC-4",
+                           "criterion":  "AC-4：全仓搜索 `wx.`、`steam`、`window.`、`document.`，在 `assets/core/`、`assets/game/` 中无命中（白名单须在 `plan.md` 登记）。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T109新跑通过",
+                           "evidence":  "`check-layering.ps1`：core/game禁用平台标识0、状态变更仅经dispatch（`temp/t109-final-layering.log`）；白名单见plan§3"
+                       },
+                       {
+                           "id":  "AC-5",
+                           "criterion":  "AC-5：`core/` 单元测试全部通过，并覆盖 AC-7 ~ AC-14 与 FR-4「结算后拒绝输入」。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T116验证通过、T109回归通过",
+                           "evidence":  "74/74全部通过，AC-7~14已有对应测试；实际victory/defeat分别覆盖全部5种GameInput、合法样式/不存在参数、连续2遍拒绝，完整state/revision/RNG不变；GameSession含结算读档后矩阵，拒绝零写盘/零删除/零时钟读取"
+                       },
+                       {
+                           "id":  "AC-6",
+                           "criterion":  "AC-6：`tasks.md` 中 M0 阻塞项全部完成（宪法 v0.2：Web + Windows 两端打通；微信小游戏 T003 延后、不计入 M0 阻塞），且 `plan.md` 状态为 Confirmed（对应宪法 C-7）。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "M0阻塞项除延后T003外均已勾选、plan为Confirmed，按宪法v0.2"
+                       },
+                       {
+                           "id":  "AC-7",
+                           "criterion":  "AC-7（地图）：同一 seed 两次生成的地图逐格一致；起点在中心；恰有 1 个 boss 且位于最外圈；各节点类型数量符合配置；任取 10 个 seed 生成的地图不全相同。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`engine.test.ts`地图同seed一致、中心/唯一外圈boss/配置节点数、10seed不全相同"
+                       },
+                       {
+                           "id":  "AC-8",
+                           "criterion":  "AC-8（移动）：移动到非相邻格被拒绝；重复进入已访问节点不触发事件；战斗中的移动输入被拒绝。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T113验证通过",
+                           "evidence":  "`engine.test.ts`3次重访已完成战斗/已用休息及移动拒绝，牌UID/HP/原state/RNG不变；`save.test.ts`读档重访仅写位置/revision，非法移动存档字节/写次数/RNG不变。实包`MapRevisit-AC8.json`52鼠标/0键盘、战斗3次/已用休息4次重访、6次读档；首次满血休息后战斗损血，重访始终HP27/30，页面/HTTP/请求失败与完整控制台错误0"
+                       },
+                       {
+                           "id":  "AC-9",
+                           "criterion":  "AC-9（能量）：每个所选存活角色回合开始产自身颜色能量1，死亡者不产能；回合结束清空剩余能量。原红蓝双角色夹具仍验1红+1蓝及单角色阵亡只产另一色；绿色/三人扩展按AC-23验证。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T114验证通过",
+                           "evidence":  "`engine.test.ts`及`save.test.ts`受控剩余红11/绿13/蓝17/白19，双人存活/红死/蓝死/本回合红死4情形各连续3回合只保留新产能、白/绿0；会话逐回合读档保持一致。绿色/三人仍用`team-selection.test.ts`原有证据"
+                       },
+                       {
+                           "id":  "AC-10",
+                           "criterion":  "AC-10（付费）：单测覆盖「同色足够可出」「同色不足但白色补足可出」「能量不足被拒绝且状态不变」三种情况。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T114强化通过",
+                           "evidence":  "core/GameSession各5种费用2分支：红3白4→红1白4、红1白4→红0白3、全白2→0；红1白0及红0白1不足拒绝，即使蓝9绿7也不能补付。成功仅存档1次并保留未使用白能量；拒绝state/revision/字节/写次数/RNG不变，恢复Snapshot一致"
+                       },
+                       {
+                           "id":  "AC-11",
+                           "criterion":  "AC-11（阵亡）：红色角色阵亡后，红色牌仍在抽牌堆 / 弃牌堆 / 手牌中且牌组总数不变；无白色能量时红色牌出牌被拒绝；阵亡状态在下一场战斗保留，进入休息节点后复活。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T114验证通过",
+                           "evidence":  "core及GameSession真实敌方伤害致红死亡后8个回合观测点，全牌UID/defId/总数不变；跟踪红牌经过抽/手/弃三牌区，无红/白时红牌playable=false且出牌拒绝，存档不写，拒绝后的后续抽牌与未中断对照一致。死亡跨层/下一场保留由`floors.test.ts`AC-20，休息复活由`engine.test.ts`FR-16支撑；受控分支均为单测"
+                       },
+                       {
+                           "id":  "AC-12",
+                           "criterion":  "AC-12（敌人与格挡）：玩家出牌前 `Snapshot` 已包含敌人意图；敌人攻击命中最左侧存活角色；格挡只加在玩家指定的队友身上，且先于生命扣除。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T115验证通过",
+                           "evidence":  "`engine.test.ts`/`save.test.ts`格挡3对伤害2/3/5与红/蓝目标6分支，只有首位存活者受击、格挡先吸伤/次回合全部清零；实际首位死亡无伤害溢出且后续命中次位。`team-selection.test.ts`两种三人顺序各1/2位阵亡跳过，读档/单次写盘/后续结果一致。实包`BlockTarget-AC12.json`31鼠标/0键盘，boss伤害5格挡3经读档后HP27→25；实际首位死亡后读档，次位30→25，控制台及网络错误0"
+                       },
+                       {
+                           "id":  "AC-13",
+                           "criterion":  "AC-13（结算与奖励）：全队阵亡进入失败结算；最后一层 boss 生命归 0 进入胜利结算；普通战斗胜利后出现 3 张红 / 蓝候选牌，选择后牌组数量 +1。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`engine.test.ts`全灭失败/胜利/三张红蓝候选与选择+1，`Team-AC15-24.json`最终层胜利"
+                       },
+                       {
+                           "id":  "AC-14",
+                           "criterion":  "AC-14（牌堆）：抽牌堆为空时弃牌堆洗回抽牌堆；同一 seed 与输入序列下洗牌顺序一致。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`engine.test.ts`弃牌洗回；同seed输入序列中的endTurn触发洗回并逐字段对比含手牌UID的Snapshot"
+                       },
+                       {
+                           "id":  "AC-15",
+                           "criterion":  "AC-15（页面）：进入战斗隐藏大地图并显示独立战斗页，敌左我右，我方显示顺序仍与原攻击目标规则一致；选奖励后回到地图，战斗存档重进后直接显示战斗页，不新开浏览器窗口。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T109新跑通过",
+                           "evidence":  "`M1Final-WebRegression.json`与`M1Final-Battle.png`独立战斗页、敌左我右、奖励回图和战斗读档"
+                       },
+                       {
+                           "id":  "AC-16",
+                           "criterion":  "AC-16（两步出牌）：左键选卡显示高亮，不改变 Snapshot、能量或存档；选攻击牌后点怪物才生效，选防御牌后点存活队友才生效；错误目标／阵亡目标不施放。可取消或切换所选牌；出牌成功、回合结束或阶段变化后清理所选牌。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "单测与主要实包分支通过",
+                           "evidence":  "`selection.test.ts`切换/取消/死亡目标/清理；T109实包验证选牌不改状态或存档、错误目标、取消、定向施放。连续切牌/死亡目标来自单测，不写成已在实包操作"
+                       },
+                       {
+                           "id":  "AC-17",
+                           "criterion":  "AC-17（地图鼠标）：左键节点显示类型、坐标、访问状态与是否可移动且不移动、不存档；右键相邻节点才请求移动，非相邻移动被拒绝；游戏画布右键不弹浏览器菜单。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T109新跑通过",
+                           "evidence":  "`M1Final-WebRegression.json`左查/右移/非相邻拒绝/右键菜单；本轮查看`M1Final-MapInfo.png`确认类型、坐标(0,-1)、未访问、相邻可右键移动四字段"
+                       },
+                       {
+                           "id":  "AC-18",
+                           "criterion":  "AC-18（鼠标全流程）：真实 Web 包仅通过鼠标完成地图移动→普通战斗→奖励选择→boss→结算并重开；结束回合按钮可用、控制台无错误；键盘不作为必需操作。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T109新跑通过",
+                           "evidence":  "`M1Final-WebRegression.json`108鼠标/0键盘，两人默认3层完整通关与鼠标重开组队"
+                       },
+                       {
+                           "id":  "AC-19",
+                           "criterion":  "AC-19（楼层推进）：3/4/5层配置均有效，默认3；从第1层开始，非最终层boss击败直接进入下一层中心且不结算/不给普通战斗奖励，最后boss才胜利；非法层数拒绝。楼层推进revision连续，最终结算冻结。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T116补齐冻结验证",
+                           "evidence":  "原有`floors.test.ts`3/4/5层通关/非法层数/切层revision，T116实际1/3/4/5层最终胜利及对应配置第1层失败，结算全输入冻结、读档与RNG不变。实包默认3层胜利与实际失败结算，24次旧控件坐标鼠标探测+32次键盘探测前后均保持Snapshot/存档，结算重开只开组队，确认才创建另一个新会话"
+                       },
+                       {
+                           "id":  "AC-20",
+                           "criterion":  "AC-20（层间延续）：切层保留HP/死亡与全部牌UID（含奖励和消耗区），未用手牌归弃牌堆，能量/格挡清空；不重初始化队伍/牌组。下一层仅起点已访问，历史地图不因当前层访问改变；地图UI和楼层指示正确刷新。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`floors.test.ts`HP/死亡/奖励与消耗区牌UID/手牌归弃/零能量格挡/独立历史地图；`Team-Floor2.png`、`Team-Floor3.png`与实包层间读档"
+                       },
+                       {
+                           "id":  "AC-21",
+                           "criterion":  "AC-21（楼层存档与确定性）：击败boss前后读档恢复楼层/地图/队伍/牌组与RNG，恢复后的后续地图和战斗与未中断序列一致。旧schema1有效单层档迁移后保持单层进度/胜负，损坏或非法楼层数据安全回退新局；不得把旧胜利变成多层中途胜利。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "T117补齐旧失败迁移",
+                           "evidence":  "`floors.test.ts`boss前后读档/RNG及旧map/battle/victory/坏档回退保留；新增实际两击全灭的旧defeat深冻结源对象迁移，全state/红蓝队伍/死亡/牌UID/RNG不变，fallback3/4/5仍单层失败，读档零写盘与显式schema2重存均通过。实包`LegacyDefeat-AC21.json`12鼠标/0键盘，两次继续旧defeat保持第1/1层/REV4/HP0与0/6牌，旧原始字节不改；确认重开后才替换为3层schema2新局"
+                       },
+                       {
+                           "id":  "AC-22",
+                           "criterion":  "AC-22（组队入口）：START/重开先显示红绿蓝选人页，无选择或仅1人不能进入地图；可切换/取消、不可重复选同角色，按选择顺序排队，2人/3人确认生成6/9张牌（每人2攻1防）。确认之前不创建地图、不覆盖存档。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`team-selection.test.ts`人数/顺序/去重/2攻1防、6/9牌，实包START和重开选人/确认前不写档"
+                       },
+                       {
+                           "id":  "AC-23",
+                           "criterion":  "AC-23（三人战斗）：右侧显示全部所选队友且顺序正确，绿色HP/攻/格挡/费用与基线一致，产绿色能量、同色付费及死亡规则正确；第三名存活队友可被指定防御，敌人攻击最早选择的存活角色。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`team-selection.test.ts`绿色攻击4/格挡3/费用1/产能死亡/敌方顺序，实包三人布局/绿色格挡第三队友；死亡分支仅单测"
+                       },
+                       {
+                           "id":  "AC-24",
+                           "criterion":  "AC-24（读档和重开）：继续游戏保留原队伍顺序/牌UID/楼层/RNG，选新队但未确认不改旧档；结算重开返回组队，确认新局后才替换存档。旧无角色定义档/配置红蓝兼容，角色配置损坏/重复/顺序不符档拒绝；同阵容配置/seed/输入结果确定。",
+                           "result":  "PASS_M1",
+                           "evidenceStatus":  "已有证据",
+                           "evidence":  "`team-selection.test.ts`只读/损坏配置/顺序/旧红蓝/确定性/三人跨层恢复，实包继续游戏/未确认不覆盖/重开确认才替换旧档"
+                       }
+                   ]
+}
