@@ -5,7 +5,9 @@ async page => {
     const blockTarget = !preview && /[?&]verify=t115(?:&|$)/.test(url);
     const settlementFreeze = !preview && /[?&]verify=t116(?:&|$)/.test(url);
     const legacyDefeat = !preview && /[?&]verify=t117(?:&|$)/.test(url);
-    const prefix = legacyDefeat ? 'LegacyDefeat' : settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
+    const adapterRegression = !preview && /[?&]verify=t118(?:&|$)/.test(url);
+    const prefix = adapterRegression ? 'AdapterRegression' : legacyDefeat ? 'LegacyDefeat'
+        : settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
         : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
     const errors = [];
     const httpErrors = [];

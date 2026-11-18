@@ -1,0 +1,239 @@
+﻿{
+    "result":  "T118 M1 AC-1 CONTRACT PASS",
+    "source":  "node-process-contract",
+    "date":  "2026-11-18",
+    "testResult":  "74/74 PASS",
+    "factories":  [
+                      "createWebAdapter",
+                      "createWxAdapter",
+                      "createWinAdapter"
+                  ],
+    "runtime":  "v22.17.0",
+    "coreClock":  0,
+    "savedAt":  1234,
+    "totalRecordedInputs":  144,
+    "totalRestoredSuffixes":  63,
+    "realPlatformValidation":  false,
+    "scope":  "Actual factories in one Node environment; Web localStorage host is simulated only in tests, wx/win are existing memory/no-op adapters. Native input/persistence and real three-platform builds are not validated.",
+    "cases":  [
+                  {
+                      "case":  "two-three-floors",
+                      "source":  "node-process-contract",
+                      "factories":  [
+                                        "web",
+                                        "wx",
+                                        "win"
+                                    ],
+                      "seed":  20261116,
+                      "clock":  0,
+                      "savedAt":  1234,
+                      "party":  [
+                                    "hero-red",
+                                    "hero-blue"
+                                ],
+                      "floorCount":  3,
+                      "inputs":  41,
+                      "snapshots":  42,
+                      "checkpoints":  [
+                                          {
+                                              "index":  0,
+                                              "phase":  "map",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  5,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  6,
+                                              "phase":  "reward",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  14,
+                                              "phase":  "map",
+                                              "floor":  2
+                                          },
+                                          {
+                                              "index":  8,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  36,
+                                              "phase":  "victory",
+                                              "floor":  3
+                                          }
+                                      ],
+                      "restoredSuffixes":  18,
+                      "reshuffles":  2,
+                      "finalPhase":  "victory",
+                      "finalFloor":  3,
+                      "finalRevision":  40,
+                      "finalRngState":  452696895,
+                      "realPlatformValidation":  false
+                  },
+                  {
+                      "case":  "three-three-floors",
+                      "source":  "node-process-contract",
+                      "factories":  [
+                                        "web",
+                                        "wx",
+                                        "win"
+                                    ],
+                      "seed":  17,
+                      "clock":  0,
+                      "savedAt":  1234,
+                      "party":  [
+                                    "hero-green",
+                                    "hero-red",
+                                    "hero-blue"
+                                ],
+                      "floorCount":  3,
+                      "inputs":  38,
+                      "snapshots":  39,
+                      "checkpoints":  [
+                                          {
+                                              "index":  0,
+                                              "phase":  "map",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  9,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  5,
+                                              "phase":  "reward",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  12,
+                                              "phase":  "map",
+                                              "floor":  2
+                                          },
+                                          {
+                                              "index":  7,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  33,
+                                              "phase":  "victory",
+                                              "floor":  3
+                                          }
+                                      ],
+                      "restoredSuffixes":  18,
+                      "reshuffles":  1,
+                      "finalPhase":  "victory",
+                      "finalFloor":  3,
+                      "finalRevision":  37,
+                      "finalRngState":  1696107136,
+                      "realPlatformValidation":  false
+                  },
+                  {
+                      "case":  "three-five-floors",
+                      "source":  "node-process-contract",
+                      "factories":  [
+                                        "web",
+                                        "wx",
+                                        "win"
+                                    ],
+                      "seed":  23,
+                      "clock":  0,
+                      "savedAt":  1234,
+                      "party":  [
+                                    "hero-blue",
+                                    "hero-green",
+                                    "hero-red"
+                                ],
+                      "floorCount":  5,
+                      "inputs":  55,
+                      "snapshots":  56,
+                      "checkpoints":  [
+                                          {
+                                              "index":  0,
+                                              "phase":  "map",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  5,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  6,
+                                              "phase":  "reward",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  12,
+                                              "phase":  "map",
+                                              "floor":  2
+                                          },
+                                          {
+                                              "index":  8,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  50,
+                                              "phase":  "victory",
+                                              "floor":  5
+                                          }
+                                      ],
+                      "restoredSuffixes":  18,
+                      "reshuffles":  1,
+                      "finalPhase":  "victory",
+                      "finalFloor":  5,
+                      "finalRevision":  58,
+                      "finalRngState":  2512190103,
+                      "realPlatformValidation":  false
+                  },
+                  {
+                      "case":  "two-defeat",
+                      "source":  "node-process-contract",
+                      "factories":  [
+                                        "web",
+                                        "wx",
+                                        "win"
+                                    ],
+                      "seed":  2,
+                      "clock":  0,
+                      "savedAt":  1234,
+                      "party":  [
+                                    "hero-red",
+                                    "hero-blue"
+                                ],
+                      "floorCount":  3,
+                      "inputs":  10,
+                      "snapshots":  11,
+                      "checkpoints":  [
+                                          {
+                                              "index":  0,
+                                              "phase":  "map",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  4,
+                                              "phase":  "battle",
+                                              "floor":  1
+                                          },
+                                          {
+                                              "index":  5,
+                                              "phase":  "defeat",
+                                              "floor":  1
+                                          }
+                                      ],
+                      "restoredSuffixes":  9,
+                      "reshuffles":  0,
+                      "finalPhase":  "defeat",
+                      "finalFloor":  1,
+                      "finalRevision":  4,
+                      "finalRngState":  4103143707,
+                      "realPlatformValidation":  false
+                  }
+              ]
+}
