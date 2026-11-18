@@ -416,3 +416,102 @@ test('T114/AC-11: dead red cards cycle after reload; red card rejections preserv
     assert.ok(rejectedCards > 0);
     assert.deepEqual([...seenZones].sort(), ['discardPile', 'drawPile', 'hand']);
 });
+
+test('T115/AC-12: saved targeted block absorbs before HP and expires identically after reload', () => {
+    for (const damage of [2, 3, 5]) {
+        for (const targetId of ['hero-red', 'hero-blue']) {
+            const storage = new MemoryStorage();
+            const base = makeConfig(5);
+            const config: GameConfig = { ...base, drawPerTurn: base.startingDeck.length,
+                enemies: [{ ...base.enemies[0]!, damage }, base.enemies[1]!] };
+            const session = new GameSession(config, { storage, now: () => 100 });
+            enterFirstBattle(session);
+            const before = session.snapshot;
+            assert.deepEqual(before.enemy!.intent, { kind: 'attack', damage });
+            const guard = before.hand.find(card => card.def.id === 'red-def')!;
+            const data = GameSession.readSave(storage)!;
+            const writes = storage.writes;
+            const guarded = session.dispatch({ type: 'playCard', uid: guard.uid, targetId });
+            assert.equal(guarded.lastRejection, null);
+            assert.equal(guarded.revision, before.revision + 1);
+            assert.deepEqual(guarded.party, before.party.map(hero =>
+                hero.id === targetId ? { ...hero, block: 3 } : hero));
+            assert.deepEqual(guarded.enemy, before.enemy);
+            assert.equal(storage.writes, writes + 1);
+            const savedGuard = GameSession.readSave(storage)!;
+            assert.deepEqual(savedGuard.state.party, guarded.party);
+            assert.equal(savedGuard.rngState, data.rngState);
+            const resumed = GameSession.load(storage, config, () => 100);
+            assert.deepEqual(resumed.snapshot, guarded);
+            assert.equal(storage.writes, writes + 1);
+            const next = session.dispatch({ type: 'endTurn' });
+            assert.equal(next.lastRejection, null);
+            const savedNext = GameSession.readSave(storage)!;
+            assert.deepEqual(resumed.dispatch({ type: 'endTurn' }), next);
+            assert.deepEqual(GameSession.readSave(storage), savedNext);
+            assert.equal(storage.writes, writes + 3);
+            const hp = config.startHp - damage + (targetId === 'hero-red' ? Math.min(3, damage) : 0);
+            assert.deepEqual(next.party, before.party.map(hero => hero.id === 'hero-red' ? { ...hero, hp } : hero));
+            assert.equal(next.turn, before.turn + 1);
+            assert.equal(next.revision, guarded.revision + 1);
+            assert.equal(savedNext.state.revision, next.revision);
+            assert.deepEqual(savedNext.state.party, next.party);
+            const loadedNext = GameSession.load(storage, config, () => 100);
+            assert.deepEqual(loadedNext.snapshot, next);
+            assert.equal(storage.writes, writes + 3);
+            const again = session.dispatch({ type: 'endTurn' });
+            assert.equal(again.lastRejection, null);
+            assert.deepEqual(again, loadedNext.dispatch({ type: 'endTurn' }));
+            assert.deepEqual(again.party.map(hero => ({ hp: hero.hp, block: hero.block })),
+                [{ hp: hp - damage, block: 0 }, { hp: config.startHp, block: 0 }]);
+        }
+    }
+});
+
+test('T115/AC-12: after actual first-hero death, reload preserves the next living attack target', () => {
+    const storage = new MemoryStorage();
+    const base = makeConfig(5);
+    const config: GameConfig = { ...base, drawPerTurn: base.startingDeck.length,
+        enemies: [{ ...base.enemies[0]!, damage: 5 }, base.enemies[1]!] };
+    const initial = new GameSession(config, { storage, now: () => 100 });
+    enterFirstBattle(initial);
+    const data = GameSession.readSave(storage)!;
+    const injured = { ...data, state: { ...data.state,
+        party: data.state.party.map((hero, i) => i === 0 ? { ...hero, hp: 2 } : hero) } };
+    assert.equal(isSaveData(injured), true);
+    const session = new GameSession(config, { storage, now: () => 100, restored: injured });
+    const writes = storage.writes;
+    const died = session.dispatch({ type: 'endTurn' });
+    assert.equal(died.lastRejection, null);
+    assert.deepEqual(died.party[0], { ...injured.state.party[0]!, hp: 0, alive: false });
+    assert.deepEqual(died.party[1], injured.state.party[1]);
+    assert.equal(storage.writes, writes + 1);
+    const resumed = GameSession.load(storage, config, () => 100);
+    assert.deepEqual(resumed.snapshot, died);
+    assert.equal(storage.writes, writes + 1);
+    const guard = resumed.snapshot.hand.find(card => card.def.id === 'blue-def')!;
+    const guarded = resumed.dispatch({ type: 'playCard', uid: guard.uid, targetId: 'hero-blue' });
+    assert.equal(guarded.lastRejection, null);
+    assert.deepEqual(guarded.party[0], died.party[0]);
+    assert.equal(guarded.party[1]!.block, 3);
+    assert.equal(storage.writes, writes + 2);
+    const savedGuard = GameSession.readSave(storage)!;
+    const control = new GameSession(config, { now: () => 100, restored: savedGuard });
+    const next = resumed.dispatch({ type: 'endTurn' });
+    assert.equal(next.lastRejection, null);
+    assert.deepEqual(next, control.dispatch({ type: 'endTurn' }));
+    assert.equal(storage.writes, writes + 3);
+    assert.equal(next.revision, guarded.revision + 1);
+    assert.deepEqual(next.party[0], died.party[0]);
+    assert.deepEqual(next.party[1], { ...injured.state.party[1]!, hp: config.startHp - 2 });
+    assert.deepEqual(GameSession.readSave(storage)!.state.party, next.party);
+    const loaded = GameSession.load(storage, config, () => 100);
+    assert.deepEqual(loaded.snapshot, next);
+    assert.equal(storage.writes, writes + 3);
+    const again = loaded.dispatch({ type: 'endTurn' });
+    assert.equal(again.lastRejection, null);
+    assert.deepEqual(again.party[0], died.party[0]);
+    assert.equal(again.party[1]!.hp, config.startHp - 7);
+    assert.equal(again.party[1]!.block, 0);
+    assert.equal(storage.writes, writes + 4);
+});

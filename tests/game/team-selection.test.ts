@@ -110,6 +110,55 @@ test('AC-23: enemy attacks the first selected living character and green death s
     assert.equal(invalid.state, defend);
 });
 
+test('T115/AC-12: ordered three-hero sessions skip one or two dead leaders and guard the first survivor', () => {
+    for (const ids of [['hero-green', 'hero-blue', 'hero-red'], ['hero-red', 'hero-green', 'hero-blue']]) {
+        for (const deadCount of [1, 2]) {
+            const storage = new MemoryStorage();
+            const base = config(ids);
+            const c: GameConfig = { ...base, drawPerTurn: base.startingDeck.length,
+                enemies: [{ ...base.enemies[0]!, damage: 5 }, base.enemies[1]!] };
+            const initial = new GameSession(c, { storage, now: () => 100 });
+            const node = initial.snapshot.map.nodes.find(n => n.kind === 'battle'
+                && hexDistance(n.coord, initial.snapshot.map.position) === 1)!;
+            initial.dispatch({ type: 'move', to: node.coord });
+            const data = GameSession.readSave(storage)!;
+            const setup = { ...data, state: { ...data.state, party: data.state.party.map((hero, i) =>
+                i < deadCount ? { ...hero, hp: 0, alive: false } : hero) } };
+            assert.equal(isSaveData(setup), true);
+            const session = new GameSession(c, { storage, now: () => 100, restored: setup });
+            const target = session.snapshot.party[deadCount]!;
+            assert.equal(target.id, ids[deadCount]);
+            const guard = session.snapshot.hand.find(card => card.def.color === target.color
+                && card.def.effect.kind === 'defend')!;
+            const writes = storage.writes;
+            const guarded = session.dispatch({ type: 'playCard', uid: guard.uid, targetId: target.id });
+            assert.equal(guarded.lastRejection, null);
+            assert.deepEqual(guarded.party, setup.state.party.map(hero =>
+                hero.id === target.id ? { ...hero, block: 3 } : hero));
+            assert.equal(storage.writes, writes + 1);
+            const loaded = GameSession.load(storage, c, () => 100);
+            assert.deepEqual(loaded.snapshot, guarded);
+            assert.equal(storage.writes, writes + 1);
+            const control = new GameSession(c, { now: () => 100, restored: GameSession.readSave(storage)! });
+            const next = loaded.dispatch({ type: 'endTurn' });
+            assert.equal(next.lastRejection, null);
+            assert.deepEqual(next, control.dispatch({ type: 'endTurn' }));
+            assert.equal(next.phase, 'battle');
+            assert.deepEqual(next.party.map(hero => hero.id), ids);
+            assert.deepEqual(next.party, setup.state.party.map(hero =>
+                hero.id === target.id ? { ...hero, hp: hero.hp - 2 } : hero));
+            assert.ok(next.party.every(hero => hero.block === 0));
+            assert.equal(storage.writes, writes + 2);
+            assert.deepEqual(GameSession.readSave(storage)!.state.party, next.party);
+            const again = loaded.dispatch({ type: 'endTurn' });
+            assert.equal(again.lastRejection, null);
+            assert.deepEqual(again.party, setup.state.party.map(hero =>
+                hero.id === target.id ? { ...hero, hp: hero.hp - 7 } : hero));
+            assert.equal(storage.writes, writes + 3);
+        }
+    }
+});
+
 test('AC-22: core rejects wrong count, duplicate ID, wrong-color and unknown starting cards before RNG', () => {
     const base = config();
     const invalid: GameConfig[] = [

@@ -349,6 +349,84 @@ test('AC-12: snapshot shows enemy intent before play; defend block targets chose
     assert.equal(after.state.party.find((c) => c.id === 'hero-red')!.block, 0);
 });
 
+test('T115/AC-12: targeted guard absorbs damage before HP, all block expires before the next attack', () => {
+    for (const damage of [2, 3, 5]) {
+        for (const targetId of ['hero-red', 'hero-blue']) {
+            const rng = createSeededRng(5);
+            const ctx: CoreContext = { clock: createFixedClock(0), rng };
+            const base = makeConfig(5);
+            const config: GameConfig = { ...base, enemies: [{ ...base.enemies[0]!, damage }, base.enemies[1]!] };
+            const initial = initGame(config, ctx).state;
+            const node = initial.map.nodes.find(n => n.kind === 'battle' && hexDistance(n.coord, initial.position) === 1)!;
+            const entered = stepTo(initial, node.coord, ctx);
+            assert.deepEqual(entered.snapshot.enemy!.intent, { kind: 'attack', damage });
+            const guard = entered.state.deck.hand.find(card => card.defId === 'red-def')!;
+            const original = JSON.stringify(entered.state);
+            const rngBefore = rng.getState();
+            const guarded = advance(entered.state, { type: 'playCard', uid: guard.uid, targetId }, ctx);
+            assert.equal(guarded.snapshot.lastRejection, null);
+            assert.equal(JSON.stringify(entered.state), original);
+            assert.equal(rng.getState(), rngBefore);
+            assert.deepEqual(guarded.state.party, entered.state.party.map(hero =>
+                hero.id === targetId ? { ...hero, block: 3 } : hero));
+            assert.deepEqual(guarded.snapshot.enemy, entered.snapshot.enemy);
+            assert.deepEqual(guarded.state.energy, { red: 0, green: 0, blue: 1, white: 0 });
+            const guardedData = JSON.stringify(guarded.state);
+            const next = advance(guarded.state, { type: 'endTurn' }, ctx);
+            const absorbed = targetId === 'hero-red' ? Math.min(3, damage) : 0;
+            const expectedHp = config.startHp - damage + absorbed;
+            assert.equal(next.snapshot.lastRejection, null);
+            assert.equal(next.state.phase, 'battle');
+            assert.equal(next.state.revision, guarded.state.revision + 1);
+            assert.equal(next.state.battle!.turn, guarded.state.battle!.turn + 1);
+            assert.deepEqual(next.state.party, entered.state.party.map(hero =>
+                hero.id === 'hero-red' ? { ...hero, hp: expectedHp } : hero));
+            assert.ok(next.snapshot.party.every(hero => hero.block === 0));
+            assert.equal(JSON.stringify(guarded.state), guardedData);
+            const again = advance(next.state, { type: 'endTurn' }, ctx);
+            assert.equal(again.snapshot.lastRejection, null);
+            assert.equal(again.state.party[0]!.hp, expectedHp - damage);
+            assert.equal(again.state.party[1]!.hp, config.startHp);
+            assert.ok(again.state.party.every(hero => hero.block === 0));
+        }
+    }
+});
+
+test('T115/AC-12: killing the first hero does not spill damage and later attacks skip that dead hero', () => {
+    const rng = createSeededRng(5);
+    const ctx: CoreContext = { clock: createFixedClock(0), rng };
+    const base = makeConfig(5);
+    const config: GameConfig = { ...base, enemies: [{ ...base.enemies[0]!, damage: 5 }, base.enemies[1]!] };
+    const initial = initGame(config, ctx).state;
+    const node = initial.map.nodes.find(n => n.kind === 'battle' && hexDistance(n.coord, initial.position) === 1)!;
+    const entered = stepTo(initial, node.coord, ctx).state;
+    const injured: GameState = { ...entered, party: entered.party.map((hero, i) =>
+        i === 0 ? { ...hero, hp: 2 } : hero) };
+    const original = JSON.stringify(injured);
+    const killed = advance(injured, { type: 'endTurn' }, ctx);
+    assert.equal(killed.snapshot.lastRejection, null);
+    assert.equal(JSON.stringify(injured), original);
+    assert.deepEqual(killed.state.party[0], { ...injured.party[0]!, hp: 0, alive: false });
+    assert.deepEqual(killed.state.party[1], injured.party[1]);
+    assert.deepEqual(killed.state.energy, { red: 0, green: 0, blue: 1, white: 0 });
+    const guard = killed.state.deck.hand.find(card => card.defId === 'blue-def')!;
+    const guarded = advance(killed.state, { type: 'playCard', uid: guard.uid, targetId: 'hero-blue' }, ctx);
+    assert.equal(guarded.snapshot.lastRejection, null);
+    assert.deepEqual(guarded.state.party[0], killed.state.party[0]);
+    assert.equal(guarded.state.party[1]!.block, 3);
+    const next = advance(guarded.state, { type: 'endTurn' }, ctx);
+    assert.equal(next.snapshot.lastRejection, null);
+    assert.equal(next.state.phase, 'battle');
+    assert.equal(next.state.revision, guarded.state.revision + 1);
+    assert.deepEqual(next.state.party[0], killed.state.party[0]);
+    assert.deepEqual(next.state.party[1], { ...injured.party[1]!, hp: config.startHp - 2 });
+    assert.ok(next.state.party.every(hero => hero.block === 0));
+    const again = advance(next.state, { type: 'endTurn' }, ctx);
+    assert.equal(again.snapshot.lastRejection, null);
+    assert.deepEqual(again.state.party[0], killed.state.party[0]);
+    assert.equal(again.state.party[1]!.hp, config.startHp - 7);
+});
+
 // ---- AC-11: dead character cards stay; death persists ----
 test('AC-11: dead hero keeps cards in deck; death persists to next battle; rest revives', () => {
     const init = start(6);

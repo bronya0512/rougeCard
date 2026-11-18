@@ -2,7 +2,8 @@ async page => {
     const url = page.url();
     const preview = url.includes(':7456/');
     const mapRevisit = !preview && /[?&]verify=t113(?:&|$)/.test(url);
-    const prefix = mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
+    const blockTarget = !preview && /[?&]verify=t115(?:&|$)/.test(url);
+    const prefix = blockTarget ? 'BlockTarget' : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
     const errors = [];
     const httpErrors = [];
     const trace = [];
@@ -145,6 +146,76 @@ async page => {
     };
 
     await page.setViewportSize({ width: 1280, height: 1080 });
+    if (blockTarget) {
+        let view = await start();
+        check(view.save === null, 'Use an isolated browser session for T115');
+        await click('TeamPage/Roster_0');
+        await click('TeamPage/Roster_2');
+        view = await click('TeamPage/ConfirmTeam');
+        const normal = view.snapshot.map.nodes.find(node => node.kind === 'battle'
+            && distance(node.coord, view.snapshot.map.position) === 1
+            && distance(node.coord, view.snapshot.map.boss) === 1);
+        check(normal, 'Expected an adjacent normal battle on the route to boss');
+        await advance(tile(normal.coord), 'right');
+        view = await fight();
+        check(view.snapshot.phase === 'reward', 'Normal battle must finish before boss');
+        view = await advance('RewardPage/RewardCard_0');
+        view = await advance(tile(view.snapshot.map.boss), 'right');
+        check(view.ui.battle && view.snapshot.enemy.intent.damage === 5, 'Expected boss damage five');
+        const checkedEndTurn = async () => {
+            const before = await read();
+            const s = before.snapshot;
+            const target = s.party.findIndex(hero => hero.alive);
+            const after = await advance('BattlePage/EndTurn');
+            check(after.snapshot.phase === 'battle', 'T115 must remain in battle with a survivor');
+            check(after.snapshot.revision === s.revision + 1 && after.snapshot.turn === s.turn + 1,
+                'End turn must advance exactly once');
+            for (let i = 0; i < s.party.length; i += 1) {
+                const hp = i === target ? Math.max(0, s.party[i].hp - Math.max(0, s.enemy.intent.damage - s.party[i].block))
+                    : s.party[i].hp;
+                check(after.snapshot.party[i].hp === hp && after.snapshot.party[i].alive === (hp > 0)
+                    && after.snapshot.party[i].block === 0, 'Enemy hit wrong target, bypassed block or retained block');
+            }
+            check(JSON.stringify(JSON.parse(after.save).state.party) === JSON.stringify(after.snapshot.party),
+                'Damage or block reset was not saved');
+            return after;
+        };
+        let defense = -1;
+        for (let turn = 0; turn < 4; turn += 1) {
+            defense = view.snapshot.hand.findIndex(card => card.playable && card.def.effect.kind === 'defend');
+            if (defense >= 0) break;
+            view = await checkedEndTurn();
+        }
+        check(defense >= 0 && view.snapshot.party[0].hp > 2, 'Expected a usable guard before lethal boss damage');
+        const selected = await click(`BattlePage/HandCard_${defense}`);
+        unchanged(view, selected, 'Selecting guard changed state');
+        view = await advance('BattlePage/HeroTarget_0');
+        check(view.snapshot.party[0].block === 3 && view.snapshot.party[1].block === 0, 'Guard must target only the first hero');
+        const hpBefore = view.snapshot.party[0].hp;
+        await capture('Guarded');
+        const guarded = view;
+        view = await resume();
+        unchanged(guarded, view, 'Guard did not survive reload');
+        view = await checkedEndTurn();
+        const hpAfter = view.snapshot.party[0].hp;
+        check(hpBefore - hpAfter === 2 && view.snapshot.party[1].hp === 30, 'Block three must absorb three of damage five');
+        await capture('Absorbed');
+        for (let turn = 0; view.snapshot.party[0].alive && turn < 10; turn += 1) view = await checkedEndTurn();
+        check(!view.snapshot.party[0].alive && view.snapshot.party[1].hp === 30, 'First-hero death must not spill damage');
+        await capture('LeaderDead');
+        const dead = view;
+        view = await resume();
+        unchanged(dead, view, 'Dead leader did not survive reload');
+        view = await checkedEndTurn();
+        check(view.snapshot.party[0].hp === 0 && view.snapshot.party[1].hp === 25, 'Next attack must skip dead leader and hit second hero');
+        await capture('NextTarget');
+        await page.waitForTimeout(200);
+        check(errors.length === 0 && httpErrors.length === 0, 'T115 browser or network errors detected');
+        return { result: 'T115 AC-12 WEB PASS', source: 'web-build', url, errors, httpErrors,
+            block: 3, damage: 5, hpBefore, hpAfter, reloads: 2,
+            finalRevision: view.snapshot.revision, finalPartyHp: view.snapshot.party.map(hero => hero.hp),
+            mouseActions: trace.length, keyboardActions: 0, trace };
+    }
     if (mapRevisit) {
         let view = await start();
         check(view.save === null, 'Use an isolated browser session for T113');

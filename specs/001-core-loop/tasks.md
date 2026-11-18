@@ -87,7 +87,7 @@
 - [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-24，记录证据，打检查点
   完成判据：全部验收项有证据；未通过项转为新 task 而非直接勾选。
   本轮审查（2026-11-17，基线T112检查点`55c498d`）：逐项检查现有测试正文及实包JSON/截图，不依据测试名称或WEB PASS标签推断完整覆盖。复跑`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`，49/49通过、三端adapter类型检查通过（`temp/t109-tests.log`）；`check-layering.ps1`全部通过，修改文件IDE诊断0，`node --check build/scripts/verify-web.js`通过。复核实包main/index.js仍为16:55:15/46817字节、HTTP200，使用已提交`Team-AC15-24.json`及截图，不声称本轮重新跑了浏览器全流程。根tsc既有扩展类型错误未修复，本轮未重跑根tsc。
-  结论（T114验证后更新）：19项已有所要求的单测/实包证据，5项仅部分覆盖（AC-1/5/12/19/21）。T109保持未勾选；以下“部分”是证据不足，不等于已发现实现错误。T113检查点`d9024a2`已提交；用户已授权本地提交，T114勾选随检查点归档；T115~T118尚未实现。
+  结论（T115验证后更新）：20项已有所要求的单测/实包证据，4项仅部分覆盖（AC-1/5/19/21）。T109保持未勾选；以下“部分”是证据不足，不等于已发现实现错误。T113检查点`d9024a2`、T114检查点`8633a09`已提交；用户已授权提交并推送，T115勾选随检查点归档；T116~T118尚未实现。
   口径同步（2026-11-17）：用户选择“M1先验核心”，先更新spec FR-6/AC-1及后续真实三端验收，再同步plan映射与本表/T118/T202/T302；未改业务代码、未执行新增测试、未重新构建或浏览器验收。本次只同步T109验收基线，不勾选T109/T118；三份流程文档待提交，原49/49与实包证据保持历史范围。
   路线说明（2026-11-17）：应用户要求在plan§7.1～7.3补充项目制作到上线的Mermaid流程图、角色/怪物/配置/数值/美术接入与冻结时序。仅作为后续建议路线，不新增或勾选实现任务、不修改验收要求、不授权终版美术或部署；本轮无代码/资源改动，无需重新构建。流程图已人工核对节点与分支；未安装Mermaid渲染器，未验证渲染效果。
 
@@ -97,14 +97,14 @@
   | AC-2 | 已有证据 | `Team-AC15-24.json`两人默认3层普通战斗/奖励/boss/胜利，浏览器及HTTP错误0 |
   | AC-3 | 已有证据 | `save.test.ts`最近存档与未来Snapshot；`Team-AC15-24.json`战斗、层间及三人初战继续读档 |
   | AC-4 | 本轮通过 | `check-layering.ps1`：core/game禁用平台标识0、状态变更仅经dispatch；白名单见plan§3 |
-  | AC-5 | 部分 | 59/59通过，T113/T114已补齐AC-8/9/10/11；AC-12及胜负结算全部输入冻结仍待T115/T116补齐后复核 |
+  | AC-5 | 部分 | 64/64通过，T113~T115已补齐AC-8/9/10/11/12；胜负结算全部输入冻结仍待T116补齐后复核 |
   | AC-6 | 已有证据 | M0阻塞项除延后T003外均已勾选、plan为Confirmed，按宪法v0.2 |
   | AC-7 | 已有证据 | `engine.test.ts`地图同seed一致、中心/唯一外圈boss/配置节点数、10seed不全相同 |
   | AC-8 | T113验证通过 | `engine.test.ts`3次重访已完成战斗/已用休息及移动拒绝，牌UID/HP/原state/RNG不变；`save.test.ts`读档重访仅写位置/revision，非法移动存档字节/写次数/RNG不变。实包`MapRevisit-AC8.json`52鼠标/0键盘、战斗3次/已用休息4次重访、6次读档；首次满血休息后战斗损血，重访始终HP27/30，页面/HTTP/请求失败与完整控制台错误0 |
   | AC-9 | T114验证通过 | `engine.test.ts`及`save.test.ts`受控剩余红11/绿13/蓝17/白19，双人存活/红死/蓝死/本回合红死4情形各连续3回合只保留新产能、白/绿0；会话逐回合读档保持一致。绿色/三人仍用`team-selection.test.ts`原有证据 |
   | AC-10 | T114强化通过 | core/GameSession各5种费用2分支：红3白4→红1白4、红1白4→红0白3、全白2→0；红1白0及红0白1不足拒绝，即使蓝9绿7也不能补付。成功仅存档1次并保留未使用白能量；拒绝state/revision/字节/写次数/RNG不变，恢复Snapshot一致 |
   | AC-11 | T114验证通过 | core及GameSession真实敌方伤害致红死亡后8个回合观测点，全牌UID/defId/总数不变；跟踪红牌经过抽/手/弃三牌区，无红/白时红牌playable=false且出牌拒绝，存档不写，拒绝后的后续抽牌与未中断对照一致。死亡跨层/下一场保留由`floors.test.ts`AC-20，休息复活由`engine.test.ts`FR-16支撑；受控分支均为单测 |
-  | AC-12 | 部分 | `engine.test.ts`意图与指定格挡、`team-selection.test.ts`首选受击；缺格挡先吸伤、跳过阵亡首位攻击下一位断言，转T115 |
+  | AC-12 | T115验证通过 | `engine.test.ts`/`save.test.ts`格挡3对伤害2/3/5与红/蓝目标6分支，只有首位存活者受击、格挡先吸伤/次回合全部清零；实际首位死亡无伤害溢出且后续命中次位。`team-selection.test.ts`两种三人顺序各1/2位阵亡跳过，读档/单次写盘/后续结果一致。实包`BlockTarget-AC12.json`31鼠标/0键盘，boss伤害5格挡3经读档后HP27→25；实际首位死亡后读档，次位30→25，控制台及网络错误0 |
   | AC-13 | 已有证据 | `engine.test.ts`全灭失败/胜利/三张红蓝候选与选择+1，`Team-AC15-24.json`最终层胜利 |
   | AC-14 | 已有证据 | `engine.test.ts`弃牌洗回；同seed输入序列中的endTurn触发洗回并逐字段对比含手牌UID的Snapshot |
   | AC-15 | 已有证据 | `Team-AC15-24.json`与`Team-Battle.png`独立战斗页、敌左我右、奖励回图和战斗读档 |
@@ -128,8 +128,11 @@
   实现/单测证据（2026-11-17，基线`d9024a2`）：本会话仅T114，不改需求、宪法、玩法/平台源码或依赖。`engine.test.ts`新增能量/死亡循环2条并强化付费1条，`save.test.ts`新增3条，新增总计5条。能量4情形各连续3回合验证清空全部旧能量与只产存活颜色，费用2的5分支分别验证同色优先/白色补差/不足拒绝；实际敌方致红死亡后8个回合观测点全牌UID保留、红牌抽/手/弃循环及卡手。GameSession受控存档先过`isSaveData`，成功每次只写1次、读档不写，出红牌拒绝保持Snapshot/revision/存档字节/写次数，后续endTurn抽牌与恢复未中断对照一致。`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`：59/59通过、三adapter类型检查通过（`temp/t114-tests.log`）。首次58/59因跟踪红攻牌在观测开始时已入手牌而未观察抽牌区；改跟踪死亡后仍在抽牌区的红牌UID，严格三牌区断言保留，未改引擎规则。
   Web回归证据：现有`main/index.js`仍16:55:15/46817字节，`http://127.0.0.1:8123/`返回200。独立Edge会话`t114-web`打开`?verify=t114`，UTF8读取`verify-web.js`仅在内存将截图prefix改成`../../temp/T114Web`后run-code，不修改脚本或覆盖历史证据。结果`AC-15~24 WEB PASS/source=web-build`，108鼠标/0键盘，两人默认3层完整胜利REV53/HP17与30、三人初战绿色定向格挡及继续读档，首屏起完整控制台/页面/HTTP/requestfailed错误0；`T114-WebRegression.json`明确scope仅既有Web流程回归，原始日志`temp/t114-web-browser.log`、10张截图`temp/T114Web-*.png`。
   验证边界/收尾：高剩余能量、白色补差及红死亡卡手由受控单测验证，不写成浏览器操作；三人完整通关/4或5层Web本轮未测。`check-layering.ps1`、修改文件IDE诊断及`git diff --check`通过；未改assets、未重新Build，复验已有真实包。根tsc既有扩展错误未处理。实现和验证通过；用户已授权本地提交，T114勾选随Git检查点归档（提交主题test(M1): close T114 - energy and dead-card regression coverage），不push；T115~T118不执行。
-- [ ] **T115** 补格挡吸伤与跳过阵亡首位回归（AC-12，预计2小时）
+- [x] **T115** 补格挡吸伤与跳过阵亡首位回归（AC-12，预计2小时）
   完成判据：格挡3/伤害5时目标HP只减2、其他队友不受伤、下回合格挡0；首位已死时敌方攻击下一位存活者；`test-core.ps1`与分层通过。
+  实现/单测证据（2026-11-17，基线`8633a09`）：仅本task，不改需求、宪法、assets玩法/平台代码或依赖。`engine.test.ts`新增2条：实际防御牌定向红/蓝，格挡3对伤害2/3/5的6分支验证吸伤/仅首位受击/所有格挡清零，下一击扣完整伤害；实际伤害致首位死亡时不溢出给次位，后续带格挡攻击次位只减2。`save.test.ts`新增2条对应读档/写盘契约，成功每次只写1次、读档不写，存档party/revision与Snapshot一致；恢复后endTurn与未中断结果及存档RNG一致。`team-selection.test.ts`新增1条，两种合法有序三人配置各1/2位首位阵亡，定向首名存活者格挡，经读档只命中该位且保持队伍顺序。`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`：64/64通过、三adapter类型检查通过（`temp/t115-tests.log`）。
+  Web实测证据：`verify-web.js`新增独立`?verify=t115`分支/`BlockTarget`前缀，复用鼠标/只读Snapshot及存档工具，不注入或修改运行状态。独立Edge会话`t115-web`打开`http://127.0.0.1:8123/?verify=t115`，UTF8读取脚本后run-code（`temp/t115-web-browser.log`），结果`T115 AC-12 WEB PASS/source=web-build`。31鼠标/0键盘：红蓝组队→普通战斗/1奖励→boss伤害5，格挡3定向首位、读档仍保留格挡，endTurn后HP27→25/次位30、格挡0；继续承伤使首位实际阵亡且次位仍30，读档后下一击仅次位30→25。2次读档，最终HP0/25、REV17；首屏起完整控制台/页面/HTTP/requestfailed错误0。证据`BlockTarget-AC12.json`与`BlockTarget-{Guarded,Absorbed,LeaderDead,NextTarget}.png`。
+  验证边界/收尾：受控伤害2/3及三人1/2位阵亡组合由单测验证，浏览器实测为红蓝双人第1层boss格挡/死亡/目标切换，未宣称本轮完整通关或三人真机矩阵。只新增测试/验收脚本，assets与依赖未变，无需重新Build；现有`main/index.js`仍16:55:15/46817字节、HTTP200，本轮复验已有真实包。`check-layering.ps1`、`node --check build/scripts/verify-web.js`、修改文件IDE诊断与`git diff --check`通过；根tsc既有扩展问题未处理。实现与验证通过；2026-11-18用户已授权提交并推送，T115勾选随Git检查点归档（提交主题test(M1): close T115 - block and living-target regression coverage），推送目标origin/main，结果以实际Git输出为准；T116~T118不执行。
 - [ ] **T116** 补胜负结算输入冻结矩阵（AC-5/19、FR-4，预计2小时）
   完成判据：实际推进得到victory和defeat，分别投递start/move/playCard/endTurn/chooseReward全部拒绝；state/revision/RNG不变，GameSession不写存档；`test-core.ps1`与分层通过。
 - [ ] **T117** 补旧schema1失败存档迁移回归（AC-21，预计1小时）
