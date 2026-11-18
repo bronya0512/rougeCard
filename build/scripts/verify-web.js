@@ -4,7 +4,8 @@ async page => {
     const mapRevisit = !preview && /[?&]verify=t113(?:&|$)/.test(url);
     const blockTarget = !preview && /[?&]verify=t115(?:&|$)/.test(url);
     const settlementFreeze = !preview && /[?&]verify=t116(?:&|$)/.test(url);
-    const prefix = settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
+    const legacyDefeat = !preview && /[?&]verify=t117(?:&|$)/.test(url);
+    const prefix = legacyDefeat ? 'LegacyDefeat' : settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
         : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
     const errors = [];
     const httpErrors = [];
@@ -151,6 +152,54 @@ async page => {
     };
 
     await page.setViewportSize({ width: 1280, height: 1080 });
+    if (legacyDefeat) {
+        let view = await start();
+        check(view.ui.canContinue && view.save !== null, 'Seed a legacy defeat in the isolated test storage before T117');
+        const original = view.save;
+        const old = JSON.parse(original);
+        check(old.schemaVersion === 1 && old.state.phase === 'defeat' && old.state.floor === undefined
+            && old.state.completedMaps === undefined && old.state.config.floorCount === undefined
+            && old.state.config.startingParty === undefined, 'Fixture must be a complete old single-floor red/blue defeat');
+        await click('TeamPage/Roster_1');
+        view = await click('TeamPage/Roster_0');
+        check(view.save === original, 'Choosing another roster overwrote legacy defeat');
+        view = await click('TeamPage/ContinueRun');
+        const expected = view.snapshot;
+        check(view.ui.settlement && view.ui.settlementText.includes('DEFEAT') && expected.phase === 'defeat'
+            && expected.floor === 1 && expected.floorCount === 1, 'Old defeat was reset or expanded to multiple floors');
+        check(expected.revision === old.state.revision && JSON.stringify(expected.party) === JSON.stringify(old.state.party),
+            'Old party, death or revision changed during migration');
+        check(JSON.stringify(expected.hand.map(card => ({ uid: card.uid, defId: card.def.id })))
+            === JSON.stringify(old.state.deck.hand) && expected.drawCount === old.state.deck.drawPile.length
+            && expected.discardCount === old.state.deck.discardPile.length, 'Old card instances changed during migration');
+        check(JSON.stringify(expected.energy) === JSON.stringify(old.state.energy), 'Old energy changed during migration');
+        check(view.save === original, 'Continuing a valid legacy defeat must not rewrite storage');
+        await capture('Loaded');
+        const before = view;
+        view = await resume();
+        unchanged(before, view, 'Legacy defeat did not survive a second read-only load');
+        check(view.ui.settlement && view.snapshot.floorCount === 1, 'Reload showed the wrong page or floor count');
+        await capture('Reloaded');
+        view = await click('SettlementPage/Restart');
+        check(view.ui.team && view.save === original, 'Restart must preserve legacy save until confirmation');
+        await click('TeamPage/Roster_0');
+        await click('TeamPage/Roster_2');
+        view = await click('TeamPage/ConfirmTeam');
+        const fresh = JSON.parse(view.save);
+        check(view.ui.map && view.snapshot.revision === 0 && view.snapshot.floorCount === 3
+            && fresh.schemaVersion === 2 && view.save !== original, 'Confirmation must replace legacy save with a new schema2 run');
+        await capture('NewRun');
+        await page.waitForTimeout(200);
+        check(errors.length === 0 && httpErrors.length === 0, 'T117 browser or network errors detected');
+        return { result: 'T117 AC-21 WEB PASS', source: 'web-build', url, errors, httpErrors,
+            legacySchema: old.schemaVersion, legacyRngState: old.rngState, legacyRevision: expected.revision,
+            legacyPartyHp: expected.party.map(hero => hero.hp), legacyFloorCount: expected.floorCount,
+            legacyDeckCount: old.state.deck.drawPile.length + old.state.deck.hand.length
+                + old.state.deck.discardPile.length + old.state.deck.exhaustPile.length,
+            migratedLoadCount: 2, newSchema: fresh.schemaVersion, newFloorCount: view.snapshot.floorCount,
+            mouseActions: trace.length, keyboardActions: 0,
+            scope: 'Legacy schema1 fixture generated offline through actual GameSession enemy attacks, installed only into isolated browser storage; app state is not modified by page.evaluate.', trace };
+    }
     if (blockTarget) {
         let view = await start();
         check(view.save === null, 'Use an isolated browser session for T115');

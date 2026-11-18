@@ -56,9 +56,11 @@ function bossRun(session: GameSession): void {
 
 class MemoryStorage implements StoragePort {
     private readonly values = new Map<string, string>();
+    writes = 0;
+    removals = 0;
     get(key: string): string | null { return this.values.get(key) ?? null; }
-    set(key: string, value: string): void { this.values.set(key, value); }
-    remove(key: string): void { this.values.delete(key); }
+    set(key: string, value: string): void { this.writes += 1; this.values.set(key, value); }
+    remove(key: string): void { this.removals += 1; this.values.delete(key); }
 }
 
 function lethalState(): { state: GameState; ctx: CoreContext } {
@@ -196,6 +198,104 @@ test('AC-21: old schema1 map, battle and victory migrate as single-floor runs', 
         assert.deepEqual(loaded.snapshot, buildSnapshot(decoded.state));
         loaded.save();
         assert.equal(JSON.parse(storage.get(SAVE_KEY)!).schemaVersion, 2);
+    }
+});
+
+function legacyDefeatSave() {
+    const base = config(1);
+    const c: GameConfig = { ...base, startHp: 30, drawPerTurn: 2,
+        enemies: [{ ...base.enemies[0]!, hp: 100, damage: 30 }, base.enemies[1]!] };
+    const storage = new MemoryStorage();
+    const session = new GameSession(c, { storage, now: () => 321 });
+    const node = session.snapshot.map.nodes.find(n => n.kind === 'battle'
+        && hexDistance(n.coord, session.snapshot.map.position) === 1)!;
+    assert.equal(session.dispatch({ type: 'move', to: node.coord }).lastRejection, null);
+    for (let turn = 0; session.snapshot.phase === 'battle' && turn < 5; turn += 1) {
+        assert.equal(session.dispatch({ type: 'endTurn' }).lastRejection, null);
+    }
+    assert.equal(session.snapshot.phase, 'defeat');
+    assert.ok(session.snapshot.party.every(hero => !hero.alive && hero.hp === 0));
+    const modern = GameSession.readSave(storage);
+    if (modern === null) throw new Error('Actual defeat save missing');
+    const { floor: _floor, completedMaps: _maps, config: currentConfig, ...state } = modern.state;
+    const { floorCount: _count, ...oldConfig } = currentConfig;
+    return { modern, legacy: { schemaVersion: 1 as const, savedAt: modern.savedAt, rngState: modern.rngState,
+        state: { ...state, config: oldConfig } } };
+}
+
+test('T117/AC-21: deeply frozen legacy defeat migrates without mutation, preserving every state field and RNG', () => {
+    const { legacy, modern } = legacyDefeatSave();
+    const original = JSON.stringify(legacy);
+    const freeze = (value: unknown): void => {
+        if (value !== null && typeof value === 'object') {
+            Object.freeze(value);
+            for (const nested of Object.values(value)) freeze(nested);
+        }
+    };
+    freeze(legacy);
+    assert.equal(isSaveData(legacy), false);
+    const decoded = decodeSaveData(legacy);
+    if (decoded === null) throw new Error('Valid legacy defeat was rejected');
+    assert.equal(decoded.schemaVersion, SAVE_SCHEMA_VERSION);
+    assert.equal(decoded.savedAt, legacy.savedAt);
+    assert.equal(decoded.state.floor, 1);
+    assert.equal(decoded.state.config.floorCount, 1);
+    assert.deepEqual(decoded.state.completedMaps, []);
+    assert.equal(decoded.state.phase, 'defeat');
+    assert.deepEqual(decoded.state, modern.state);
+    assert.deepEqual(decoded.state.party.map(hero => hero.id), ['hero-red', 'hero-blue']);
+    assert.equal(decoded.state.config.startingParty, undefined);
+    assert.deepEqual(decoded.state.deck, legacy.state.deck);
+    assert.deepEqual(decoded.state.map, legacy.state.map);
+    assert.equal(decoded.rngState, modern.rngState);
+    assert.equal(JSON.stringify(legacy), original);
+    assert.deepEqual(decodeSaveData(legacy), decoded);
+    assert.equal(decodeSaveData(decoded), decoded);
+    const migratedRng = createSeededRng(decoded.rngState);
+    const originalRng = createSeededRng(modern.rngState);
+    assert.deepEqual(Array.from({ length: 8 }, () => migratedRng.int(1000)),
+        Array.from({ length: 8 }, () => originalRng.int(1000)));
+    assert.equal(migratedRng.getState(), originalRng.getState());
+});
+
+test('T117/AC-21: legacy defeat load is read-only, ignores multi-floor fallback, and explicitly resaves as schema2', () => {
+    const { legacy } = legacyDefeatSave();
+    const original = JSON.stringify(legacy);
+    const migrated = decodeSaveData(legacy);
+    if (migrated === null) throw new Error('Valid legacy defeat was rejected');
+    const expected = buildSnapshot(migrated.state);
+    for (const count of [3, 4, 5] as const) {
+        const storage = new MemoryStorage();
+        storage.set(SAVE_KEY, original);
+        const writes = storage.writes;
+        const removals = storage.removals;
+        assert.deepEqual(GameSession.readSave(storage), migrated);
+        assert.equal(storage.get(SAVE_KEY), original);
+        const loaded = GameSession.load(storage, config(count), () => legacy.savedAt);
+        assert.deepEqual(loaded.snapshot, expected);
+        assert.equal(loaded.snapshot.phase, 'defeat');
+        assert.equal(loaded.snapshot.floorCount, 1);
+        assert.equal(storage.writes, writes);
+        assert.equal(storage.removals, removals);
+        assert.equal(storage.get(SAVE_KEY), original);
+        const rejected = loaded.dispatch({ type: 'endTurn' });
+        assert.equal(rejected.lastRejection, 'game already settled');
+        assert.deepEqual({ ...rejected, lastRejection: null }, expected);
+        assert.equal(storage.get(SAVE_KEY), original);
+        assert.equal(storage.writes, writes);
+        assert.equal(storage.removals, removals);
+        loaded.save();
+        assert.equal(storage.writes, writes + 1);
+        assert.equal(storage.removals, removals);
+        const saved = GameSession.readSave(storage);
+        assert.deepEqual(saved, migrated);
+        const raw: unknown = JSON.parse(storage.get(SAVE_KEY)!);
+        assert.equal(isSaveData(raw), true);
+        assert.equal(saved!.schemaVersion, 2);
+        const reloaded = GameSession.load(storage, config(count), () => legacy.savedAt);
+        assert.deepEqual(reloaded.snapshot, expected);
+        assert.equal(storage.writes, writes + 1);
+        assert.equal(JSON.stringify(legacy), original);
     }
 });
 

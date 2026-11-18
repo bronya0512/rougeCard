@@ -87,7 +87,7 @@
 - [ ] **T109** M1 验收：逐条核对 `spec.md` §5 的 AC-1 ~ AC-24，记录证据，打检查点
   完成判据：全部验收项有证据；未通过项转为新 task 而非直接勾选。
   本轮审查（2026-11-17，基线T112检查点`55c498d`）：逐项检查现有测试正文及实包JSON/截图，不依据测试名称或WEB PASS标签推断完整覆盖。复跑`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`，49/49通过、三端adapter类型检查通过（`temp/t109-tests.log`）；`check-layering.ps1`全部通过，修改文件IDE诊断0，`node --check build/scripts/verify-web.js`通过。复核实包main/index.js仍为16:55:15/46817字节、HTTP200，使用已提交`Team-AC15-24.json`及截图，不声称本轮重新跑了浏览器全流程。根tsc既有扩展类型错误未修复，本轮未重跑根tsc。
-  结论（T116验证后更新）：22项已有所要求的单测/实包证据，2项仅部分覆盖（AC-1/21）。T109保持未勾选；以下“部分”是证据不足，不等于已发现实现错误。T115检查点`fb8f367`已提交并推送；用户已授权本地提交T116，勾选随检查点归档；接续仅T117，T118尚未实现。
+  结论（T117验证后更新）：23项已有所要求的单测/实包证据，仅AC-1进程内契约待T118。T109保持未勾选；证据不足不等于已发现实现错误。T116检查点`672016b`已本地提交、未push；用户已授权本地提交T117，勾选随检查点归档；接续仅T118，尚未实现。
   口径同步（2026-11-17）：用户选择“M1先验核心”，先更新spec FR-6/AC-1及后续真实三端验收，再同步plan映射与本表/T118/T202/T302；未改业务代码、未执行新增测试、未重新构建或浏览器验收。本次只同步T109验收基线，不勾选T109/T118；三份流程文档待提交，原49/49与实包证据保持历史范围。
   路线说明（2026-11-17）：应用户要求在plan§7.1～7.3补充项目制作到上线的Mermaid流程图、角色/怪物/配置/数值/美术接入与冻结时序。仅作为后续建议路线，不新增或勾选实现任务、不修改验收要求、不授权终版美术或部署；本轮无代码/资源改动，无需重新构建。流程图已人工核对节点与分支；未安装Mermaid渲染器，未验证渲染效果。
 
@@ -97,7 +97,7 @@
   | AC-2 | 已有证据 | `Team-AC15-24.json`两人默认3层普通战斗/奖励/boss/胜利，浏览器及HTTP错误0 |
   | AC-3 | 已有证据 | `save.test.ts`最近存档与未来Snapshot；`Team-AC15-24.json`战斗、层间及三人初战继续读档 |
   | AC-4 | 本轮通过 | `check-layering.ps1`：core/game禁用平台标识0、状态变更仅经dispatch；白名单见plan§3 |
-  | AC-5 | T116验证通过 | 67/67全部通过，AC-7~14已有对应测试；实际victory/defeat分别覆盖全部5种GameInput、合法样式/不存在参数、连续2遍拒绝，完整state/revision/RNG不变；GameSession含结算读档后矩阵，拒绝零写盘/零删除/零时钟读取 |
+  | AC-5 | T116验证通过、T117回归通过 | 69/69全部通过，AC-7~14已有对应测试；实际victory/defeat分别覆盖全部5种GameInput、合法样式/不存在参数、连续2遍拒绝，完整state/revision/RNG不变；GameSession含结算读档后矩阵，拒绝零写盘/零删除/零时钟读取 |
   | AC-6 | 已有证据 | M0阻塞项除延后T003外均已勾选、plan为Confirmed，按宪法v0.2 |
   | AC-7 | 已有证据 | `engine.test.ts`地图同seed一致、中心/唯一外圈boss/配置节点数、10seed不全相同 |
   | AC-8 | T113验证通过 | `engine.test.ts`3次重访已完成战斗/已用休息及移动拒绝，牌UID/HP/原state/RNG不变；`save.test.ts`读档重访仅写位置/revision，非法移动存档字节/写次数/RNG不变。实包`MapRevisit-AC8.json`52鼠标/0键盘、战斗3次/已用休息4次重访、6次读档；首次满血休息后战斗损血，重访始终HP27/30，页面/HTTP/请求失败与完整控制台错误0 |
@@ -113,7 +113,7 @@
   | AC-18 | 已有证据 | `Team-AC15-24.json`108鼠标/0键盘，两人默认3层完整通关与鼠标重开组队 |
   | AC-19 | T116补齐冻结验证 | 原有`floors.test.ts`3/4/5层通关/非法层数/切层revision，T116实际1/3/4/5层最终胜利及对应配置第1层失败，结算全输入冻结、读档与RNG不变。实包默认3层胜利与实际失败结算，24次旧控件坐标鼠标探测+32次键盘探测前后均保持Snapshot/存档，结算重开只开组队，确认才创建另一个新会话 |
   | AC-20 | 已有证据 | `floors.test.ts`HP/死亡/奖励与消耗区牌UID/手牌归弃/零能量格挡/独立历史地图；`Team-Floor2.png`、`Team-Floor3.png`与实包层间读档 |
-  | AC-21 | 部分 | `floors.test.ts`boss前后读档/RNG、schema1 map/battle/victory迁移、坏档回退；旧schema1 defeat未专测，转T117 |
+  | AC-21 | T117补齐旧失败迁移 | `floors.test.ts`boss前后读档/RNG及旧map/battle/victory/坏档回退保留；新增实际两击全灭的旧defeat深冻结源对象迁移，全state/红蓝队伍/死亡/牌UID/RNG不变，fallback3/4/5仍单层失败，读档零写盘与显式schema2重存均通过。实包`LegacyDefeat-AC21.json`12鼠标/0键盘，两次继续旧defeat保持第1/1层/REV4/HP0与0/6牌，旧原始字节不改；确认重开后才替换为3层schema2新局 |
   | AC-22 | 已有证据 | `team-selection.test.ts`人数/顺序/去重/2攻1防、6/9牌，实包START和重开选人/确认前不写档 |
   | AC-23 | 已有证据 | `team-selection.test.ts`绿色攻击4/格挡3/费用1/产能死亡/敌方顺序，实包三人布局/绿色格挡第三队友；死亡分支仅单测 |
   | AC-24 | 已有证据 | `team-selection.test.ts`只读/损坏配置/顺序/旧红蓝/确定性/三人跨层恢复，实包继续游戏/未确认不覆盖/重开确认才替换旧档 |
@@ -138,8 +138,11 @@
   实现/单测证据（2026-11-18，基线`fb8f367`）：只做本task。`engine.test.ts`将原伪造victory/3输入测试替换为实际victory/defeat两条：各1/3/4/5层配置真实推进，不赋值phase；胜利走到最后boss，失败由第1层敌人两击全灭。`Record<GameInput['type'], readonly GameInput[]>`要求5类型齐全，共8种参数组合（含存在牌UID/配置牌ID/相邻坐标与不存在参数），各连续2遍，统一拒绝`game already settled`且原state引用/序列化全部数据/revision/RNG不变。`save.test.ts`新增胜负2条，每配置对原会话及读档会话运行相同矩阵，拒绝Snapshot/revision/存档字节/RNG不变、零写入/删除/时钟读取；矩阵完成后仅显式save各1次，完整字节仍一致，验证私有RNG未暗改。新增净3条，`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`：67/67通过、三adapter类型检查通过（`temp/t116-tests.log`）。
   Web实测证据：`verify-web.js`新增`?verify=t116`/`SettlementFreeze`分支。真实鼠标三层通关后，对胜负结算各在读档前后探测隐藏旧控件坐标（每次6鼠标）及8个真实键盘按键（方向/Q/E/Space/1/3/Escape），总24冻结鼠标+32键盘，Snapshot/存档始终不变；重开只开组队不改旧档，确认新局才替换。失败由新红蓝队伍在普通战斗连续20次endTurn实际被敌人击杀，不注入状态或core输入。`playwright-cli -s=t116-final run-code --filename d:/dev/rougeCard/rougeCard/build/scripts/verify-web.js`，结果`T116 FR-4 WEB PASS/source=web-build`：总154鼠标/32键盘，胜利REV53/HP17与30、失败REV22/HP0与0、结算读档2次，首屏起完整控制台/页面/HTTP/requestfailed错误0（`temp/t116-web-final.log`）。证据`SettlementFreeze-FR4.json`与12张`SettlementFreeze-*.png`（含胜负Frozen/Reloaded4截图）。
   验证边界/收尾：全部GameInput由单测验证，浏览器仅走真实UI/键盘探测；1/4/5层冻结仅单测，实包胜利默认3层、失败第1层。本轮assets/依赖未变，不需重新Build；现有main/index.js仍2026-11-17 16:55:15/46817字节。原8123服务已退出导致初次连接失败，重新启动既有serve-web.ps1（仅127.0.0.1）后HTTP200。脚本长度超过Windows参数限制，实测CLI --filename后改文件输入；旧可见节点点击工具无法探测隐藏控件、读档不创建手牌节点，增加显式allowInactive及已实测坐标缓存，不激活节点，最终新隔离会话完整重验通过。首次测试误用不存在的attachStorage及假定每个地图事件仅revision+1，按实际API/多commit规则修正测试，未改玩法；冻结不变断言保留。分层、脚本语法、修改文件IDE诊断与git diff --check通过，根tsc既有扩展问题未处理。实现/验证通过；用户已授权本地提交T116，勾选随Git检查点归档（提交主题test(M1): close T116 - settlement input freeze matrix），不push；接续仅T117，T118不执行。
-- [ ] **T117** 补旧schema1失败存档迁移回归（AC-21，预计1小时）
+- [x] **T117** 补旧schema1失败存档迁移回归（AC-21，预计1小时）
   完成判据：完整旧defeat档保持单层失败、队伍/牌UID/RNG；迁移不改原对象，读回与迁移Snapshot一致；`test-core.ps1`与分层通过。
+  实现/单测证据（2026-11-18，基线`672016b`）：先按用户授权本地提交T116，随后只做T117，未push。`floors.test.ts`新增两条，不改迁移或玩法实现：通过GameSession/自然相邻战斗/实际伤害30两击全灭生成完整失败，去除新楼层字段形成schema1旧档，保留红蓝旧配置无startingParty。递归深冻结输入后decode不报错且源JSON不变，schema2/floor1/completedMaps空、全部state/party/牌UID/revision/map/RNG与原失败相同，重复解码一致，注入RNG后8次随机续接一致。fallback3/4/5各验证readSave/load零写盘/删除、Snapshot同迁移后结果、endTurn冻结不写旧字节、显式save仅1次并转schema2、二次读档保持原单层失败。`powershell -NoProfile -ExecutionPolicy Bypass -File build/scripts/test-core.ps1`：69/69、三adapter类型检查通过（`temp/t117-tests.log`）。
+  Web证据：`verify-web.js`新增`?verify=t117`/`LegacyDefeat`分支。通过`temp/test-build`现有core/GameSession用与单测同配置（seed20261116、HP30、抽2、普通敌人HP100/伤害30、红蓝6牌）实际推进产生defeat并删新楼层字段，fixture=`temp/t117-legacy-defeat.json`；原生PowerShell参数传JSON曾损坏引号，改Base64运输，在隔离Edge测试存储JSON.parse校验后安装，不修改用户实际存档或页面业务state。`playwright-cli -s=t117-web run-code --filename d:/dev/rougeCard/rougeCard/build/scripts/verify-web.js`：`T117 AC-21 WEB PASS/source=web-build`，12鼠标/0键盘，组队改选不覆盖、继续旧档/二次读档显示DEFEAT/第1/1层、HP0与0/REV4/6牌/原schema1字节不变；重开保留旧档，确认红蓝新局才写schema2默认3层。完整首屏控制台/页面/HTTP/requestfailed错误0，日志`temp/t117-web-browser.log`，证据`LegacyDefeat-AC21.json`与`LegacyDefeat-{Loaded,Reloaded,NewRun}.png`。
+  验证边界/收尾：旧档为合法数据的确定性离线夹具，不是真实用户历史档；深冻结不变/显式失败档重存/RNG序列由单测验证，Web验证实际读取/页面/保存边界，本轮未重新跑完整多层通关。assets、schema、依赖均未改，不需重新Build；现有包2026-11-17 16:55:15/46817字节、HTTP200复验。分层、脚本语法、修改文件IDE诊断及git diff --check通过，根tsc既有扩展问题未处理。实现/验证通过；用户已授权本地提交T117，勾选随Git检查点归档（提交主题test(M1): close T117 - legacy defeat save migration），不push；接续仅T118，T109仍未勾选。
 - [ ] **T118** 补三adapter进程内确定性契约（M1 AC-1，预计3小时）
   完成判据：在同一Node环境实际实例化web/wx/win工厂，固定配置/seed/Clock时间/S1逐步比较序列化Snapshot；经各StoragePort保存/恢复后，用相同后续输入与未中断运行比较每步Snapshot及RNG状态；Web测试环境不泄漏至core/game；`test-core.ps1`与分层通过。结合已有核心确定性测试可支撑M1 AC-1；不得宣称真实三端运行通过，后续真机对照由T202/T302承接。
 

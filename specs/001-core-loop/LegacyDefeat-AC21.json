@@ -1,0 +1,133 @@
+﻿{
+    "result":  "T117 AC-21 WEB PASS",
+    "source":  "web-build",
+    "url":  "http://127.0.0.1:8123/?verify=t117",
+    "errors":  [
+
+               ],
+    "httpErrors":  [
+
+                   ],
+    "legacySchema":  1,
+    "legacyRngState":  4123404821,
+    "legacyRevision":  4,
+    "legacyPartyHp":  [
+                          0,
+                          0
+                      ],
+    "legacyFloorCount":  1,
+    "legacyDeckCount":  6,
+    "migratedLoadCount":  2,
+    "newSchema":  2,
+    "newFloorCount":  3,
+    "mouseActions":  12,
+    "keyboardActions":  0,
+    "scope":  "Legacy schema1 fixture generated offline through actual GameSession enemy attacks, installed only into isolated browser storage; app state is not modified by page.evaluate.",
+    "trace":  [
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "defeat",
+                      "revision":  4,
+                      "floor":  1,
+                      "floorCount":  1,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "defeat",
+                      "revision":  4,
+                      "floor":  1,
+                      "floorCount":  1,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:SettlementPage/Restart",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ConfirmTeam",
+                      "phase":  "map",
+                      "revision":  0,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  }
+              ]
+}
