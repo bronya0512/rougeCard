@@ -14,6 +14,7 @@ import {
     type AdvanceResult,
     type CoreContext,
     type GameConfig,
+    type GameInput,
     type GameState,
 } from '../../assets/core/index';
 
@@ -592,17 +593,75 @@ test('FR-16: rest node revives dead hero and restores HP by config', () => {
 });
 
 // ---- FR-4: settled state freezes ----
-test('FR-4: after settlement every input is rejected and state frozen', () => {
-    const init = start(12);
-    const ctx = makeCtx(12);
-    const settled = { ...init.state, phase: 'victory' as const };
-    for (const input of [
-        { type: 'start' },
-        { type: 'move', to: { q: 1, r: 0 } },
-        { type: 'endTurn' },
-    ] as const) {
-        const r = advance(settled, input, ctx);
-        assert.equal(r.state, settled);
-        assert.ok(r.snapshot.lastRejection !== null);
-    }
-});
+for (const outcome of ['victory', 'defeat'] as const) {
+    test(`T116/FR-4: actual ${outcome} rejects every input without changing state, revision or RNG`, () => {
+        for (const floorCount of [1, 3, 4, 5] as const) {
+            const base = makeConfig(12);
+            const config: GameConfig = { ...base, floorCount, startHp: 200,
+                enemies: outcome === 'victory'
+                    ? [{ ...base.enemies[0]!, hp: 4, damage: 1 }, { ...base.enemies[1]!, hp: 8, damage: 1 }]
+                    : [{ ...base.enemies[0]!, hp: 100, damage: 200 }, base.enemies[1]!],
+            };
+            const rng = createSeededRng(config.seed);
+            const ctx: CoreContext = { clock: createFixedClock(0), rng };
+            let state = initGame(config, ctx).state;
+            for (let step = 0; state.phase !== outcome && step < 300; step += 1) {
+                let input: GameInput;
+                if (state.phase === 'map') {
+                    const node = state.map.nodes.find(n => hexDistance(n.coord, state.position) === 1
+                        && (outcome === 'defeat' ? n.kind === 'battle'
+                            : hexDistance(n.coord, state.map.boss) < hexDistance(state.position, state.map.boss)));
+                    if (node === undefined) throw new Error('No path to settlement');
+                    input = { type: 'move', to: node.coord };
+                } else if (state.phase === 'reward') {
+                    input = { type: 'chooseReward', defId: state.rewardCandidates[0]! };
+                } else if (state.phase === 'battle') {
+                    const card = buildSnapshot(state).hand.find(c => c.playable && c.def.effect.kind === 'attack');
+                    input = outcome === 'defeat' || card === undefined ? { type: 'endTurn' }
+                        : { type: 'playCard', uid: card.uid };
+                } else {
+                    throw new Error(`Unexpected settlement phase ${state.phase}`);
+                }
+                const result = advance(state, input, ctx);
+                assert.equal(result.snapshot.lastRejection, null);
+                assert.ok(result.state.revision > state.revision);
+                state = result.state;
+            }
+            assert.equal(state.phase, outcome);
+            if (outcome === 'victory') {
+                assert.equal(state.floor, floorCount);
+                assert.equal(state.completedMaps.length, floorCount - 1);
+                assert.equal(state.battle, null);
+            } else {
+                assert.ok(state.party.every(hero => !hero.alive && hero.hp === 0));
+            }
+            const adjacent = state.map.nodes.find(n => hexDistance(n.coord, state.position) === 1)!;
+            const uid = state.deck.hand[0]?.uid ?? state.deck.discardPile[0]!.uid;
+            const inputs: Record<GameInput['type'], readonly GameInput[]> = {
+                start: [{ type: 'start' }],
+                move: [{ type: 'move', to: adjacent.coord }, { type: 'move', to: { q: 99, r: 99 } }],
+                playCard: [{ type: 'playCard', uid, targetId: state.party[0]!.id },
+                    { type: 'playCard', uid: 'missing-card', targetId: 'missing-hero' }],
+                endTurn: [{ type: 'endTurn' }],
+                chooseReward: [{ type: 'chooseReward', defId: config.cardDefs[0]!.id },
+                    { type: 'chooseReward', defId: 'missing-reward' }],
+            };
+            const snapshot = buildSnapshot(state);
+            const bytes = JSON.stringify(state);
+            const rngState = rng.getState();
+            for (let repeat = 0; repeat < 2; repeat += 1) {
+                for (const group of Object.values(inputs)) {
+                    for (const input of group) {
+                        const result = advance(state, input, ctx);
+                        assert.equal(result.snapshot.lastRejection, 'game already settled');
+                        assert.equal(result.state, state);
+                        assert.equal(result.state.revision, state.revision);
+                        assert.equal(JSON.stringify(state), bytes);
+                        assert.deepEqual({ ...result.snapshot, lastRejection: null }, snapshot);
+                        assert.equal(rng.getState(), rngState);
+                    }
+                }
+            }
+        }
+    });
+}

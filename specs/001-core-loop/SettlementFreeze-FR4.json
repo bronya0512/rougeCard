@@ -1,0 +1,2046 @@
+﻿{
+    "result":  "T116 FR-4 WEB PASS",
+    "source":  "web-build",
+    "url":  "http://127.0.0.1:8123/?verify=t116",
+    "floorCount":  3,
+    "errors":  [
+
+               ],
+    "httpErrors":  [
+
+                   ],
+    "contextPrevented":  true,
+    "victoryRevision":  53,
+    "victoryPartyHp":  [
+                           17,
+                           30
+                       ],
+    "defeatRevision":  22,
+    "defeatPartyHp":  [
+                          0,
+                          0
+                      ],
+    "settlementReloads":  2,
+    "frozenMouseAttempts":  24,
+    "frozenKeyboardAttempts":  32,
+    "mouseActions":  154,
+    "keyboardActions":  32,
+    "keyboardTrace":  [
+                          {
+                              "outcome":  "victory",
+                              "key":  "ArrowUp",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "ArrowRight",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "q",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "e",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "Space",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "1",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "3",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "Escape",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "ArrowUp",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "ArrowRight",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "q",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "e",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "Space",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "1",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "3",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "victory",
+                              "key":  "Escape",
+                              "revision":  53
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "ArrowUp",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "ArrowRight",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "q",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "e",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "Space",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "1",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "3",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "Escape",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "ArrowUp",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "ArrowRight",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "q",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "e",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "Space",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "1",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "3",
+                              "revision":  22
+                          },
+                          {
+                              "outcome":  "defeat",
+                              "key":  "Escape",
+                              "revision":  22
+                          }
+                      ],
+    "scope":  "Actual three-floor victory and actual defeat; UI controls and keyboard frozen before/after reload. All core GameInput types are covered by unit tests, not directly injected in the browser.",
+    "trace":  [
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ConfirmTeam",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ConfirmTeam",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-blue",
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ConfirmTeam",
+                      "phase":  "map",
+                      "revision":  0,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "map",
+                      "revision":  0,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-2_0",
+                      "phase":  "map",
+                      "revision":  0,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_0",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/CancelCard",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-2",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-2",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_1",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  4,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_2",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_3",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "reward",
+                      "revision":  7,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_1",
+                      "phase":  "map",
+                      "revision":  8,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_1_-1",
+                      "phase":  "map",
+                      "revision":  10,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "map",
+                      "revision":  11,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-2",
+                      "phase":  "battle",
+                      "revision":  13,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  13,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-3",
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  14,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  14,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-0",
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  15,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  16,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      25,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  16,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      25,
+                                      30
+                                  ],
+                      "selected":  "card-r-7-r-atk",
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  17,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      25,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  17,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      25,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  18,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      25,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  19,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      20,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  19,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      20,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  20,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      20,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  20,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      20,
+                                      30
+                                  ],
+                      "selected":  "card-0",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "map",
+                      "revision":  21,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      20,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  21,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      20,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-1_1",
+                      "phase":  "map",
+                      "revision":  23,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_0",
+                      "phase":  "map",
+                      "revision":  24,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-1",
+                      "phase":  "battle",
+                      "revision":  26,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  26,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-r-7-r-atk",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  27,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  27,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  "card-0",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  28,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  29,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  29,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "reward",
+                      "revision":  30,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_0",
+                      "phase":  "map",
+                      "revision":  31,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_0_-2",
+                      "phase":  "battle",
+                      "revision":  33,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  33,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-3",
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  34,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  34,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  35,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  36,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  36,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  37,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  37,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  "card-r-30-b-atk",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  38,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  39,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  39,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  40,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  40,
+                      "floor":  2,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  "card-3",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "map",
+                      "revision":  41,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "map",
+                      "revision":  41,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-1_0",
+                      "phase":  "map",
+                      "revision":  43,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-2_1",
+                      "phase":  "battle",
+                      "revision":  45,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  45,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-r-30-b-atk",
+                      "enemyHp":  24
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  46,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  46,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  "card-r-7-r-atk",
+                      "enemyHp":  20
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  47,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  48,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_1",
+                      "phase":  "battle",
+                      "revision":  48,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  "card-4",
+                      "enemyHp":  16
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  49,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_3",
+                      "phase":  "battle",
+                      "revision":  49,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  "card-1",
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  50,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      22,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  51,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  51,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  "card-r-7-r-atk",
+                      "enemyHp":  8
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "battle",
+                      "revision":  52,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "battle",
+                      "revision":  52,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  "card-0",
+                      "enemyHp":  4
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_0",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_0",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-2_1",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_0",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_0",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-2_1",
+                      "phase":  "victory",
+                      "revision":  53,
+                      "floor":  3,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      17,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:SettlementPage/Restart",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_0",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-red",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ConfirmTeam",
+                      "phase":  "map",
+                      "revision":  0,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-1_0",
+                      "phase":  "battle",
+                      "revision":  2,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      30,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  3,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      27,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  4,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      24,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  5,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      21,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  6,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      18,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  7,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      15,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  8,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      12,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  9,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      9,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  10,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      6,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  11,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      3,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  12,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      30
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  13,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      27
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  14,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      24
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  15,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      21
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  16,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      18
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  17,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      15
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  18,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      12
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  19,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      9
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  20,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      6
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "battle",
+                      "revision":  21,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      3
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  12
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-1_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:StartButton",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_1",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/Roster_2",
+                      "phase":  "team",
+                      "ids":  [
+                                  "hero-green",
+                                  "hero-blue"
+                              ]
+                  },
+                  {
+                      "action":  "left:TeamPage/ContinueRun",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EndTurn",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HandCard_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/EnemyTarget",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:BattlePage/HeroTarget_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:RewardPage/RewardCard_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "right:MapPage/MapBoard/MapNode_-1_0",
+                      "phase":  "defeat",
+                      "revision":  22,
+                      "floor":  1,
+                      "floorCount":  3,
+                      "partyHp":  [
+                                      0,
+                                      0
+                                  ],
+                      "selected":  null,
+                      "enemyHp":  null
+                  },
+                  {
+                      "action":  "left:SettlementPage/Restart",
+                      "phase":  "team",
+                      "ids":  [
+
+                              ]
+                  }
+              ]
+}

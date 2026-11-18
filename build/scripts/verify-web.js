@@ -3,7 +3,9 @@ async page => {
     const preview = url.includes(':7456/');
     const mapRevisit = !preview && /[?&]verify=t113(?:&|$)/.test(url);
     const blockTarget = !preview && /[?&]verify=t115(?:&|$)/.test(url);
-    const prefix = blockTarget ? 'BlockTarget' : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
+    const settlementFreeze = !preview && /[?&]verify=t116(?:&|$)/.test(url);
+    const prefix = settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
+        : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
     const errors = [];
     const httpErrors = [];
     const trace = [];
@@ -44,19 +46,22 @@ async page => {
             save: localStorage.getItem('roguecard.save.v1') };
     });
     const capture = name => page.screenshot({ path: `specs/001-core-loop/${prefix}-${name}.png`, fullPage: true });
-    const click = async (path, button = 'left') => {
-        const point = await page.evaluate(async path => {
+    const clickPoints = new Map();
+    const click = async (path, button = 'left', allowInactive = false) => {
+        const point = await page.evaluate(async ({ path, allowInactive, previousPoint }) => {
             const cc = await System.import('cc');
             const canvas = cc.director.getScene().getChildByName('Canvas');
             const node = path.split('/').reduce((parent, name) => parent?.getChildByName(name), canvas);
-            if (!node?.activeInHierarchy) throw new Error(`Missing visible target ${path}`);
+            if (!node && allowInactive && previousPoint) return previousPoint;
+            if (!node || (!allowInactive && !node.activeInHierarchy)) throw new Error(`Missing visible target ${path}`);
             const camera = canvas.getChildByName('Camera').getComponent(cc.Camera);
             const screen = camera.worldToScreen(node.worldPosition);
             const element = document.querySelector('canvas');
             const rect = element.getBoundingClientRect();
             return { x: rect.x + screen.x / element.width * rect.width,
                 y: rect.y + (element.height - screen.y) / element.height * rect.height };
-        }, path);
+        }, { path, allowInactive, previousPoint: clickPoints.get(path) ?? null });
+        clickPoints.set(path, point);
         await page.mouse.click(point.x, point.y, { button });
         await page.waitForTimeout(100);
         const view = await read();
@@ -433,6 +438,72 @@ async page => {
     const finalRevision = view.snapshot.revision;
     const finalPartyHp = view.snapshot.party.map(hero => hero.hp);
     const settledSave = view.save;
+    if (settlementFreeze) {
+        const keyboardTrace = [];
+        const frozenUI = async outcome => {
+            const before = await read();
+            check(before.snapshot.phase === outcome && before.ui.settlement
+                && before.ui.settlementText.includes(outcome.toUpperCase()), 'Settlement page missing');
+            for (const path of ['BattlePage/EndTurn', 'BattlePage/HandCard_0', 'BattlePage/EnemyTarget',
+                'BattlePage/HeroTarget_0', 'RewardPage/RewardCard_0']) {
+                const after = await click(path, 'left', true);
+                unchanged(before, after, `${outcome}: inactive control changed settled state`);
+                check(after.ui.settlement && !after.ui.team && after.ui.selected === null, 'Inactive control opened another page');
+            }
+            const afterMove = await click(tile(before.snapshot.map.position), 'right', true);
+            unchanged(before, afterMove, `${outcome}: map right click changed settled state`);
+            for (const key of ['ArrowUp', 'ArrowRight', 'q', 'e', 'Space', '1', '3', 'Escape']) {
+                await page.keyboard.press(key);
+                await page.waitForTimeout(80);
+                const after = await read();
+                keyboardTrace.push({ outcome, key, revision: after.snapshot.revision });
+                unchanged(before, after, `${outcome}: keyboard ${key} changed settled state`);
+                check(after.ui.settlement && !after.ui.team && after.ui.selected === null, 'Keyboard opened another page');
+            }
+            return read();
+        };
+        view = await frozenUI('victory');
+        await capture('VictoryFrozen');
+        const victory = view;
+        view = await resume();
+        unchanged(victory, view, 'Victory reload differs from settlement save');
+        view = await frozenUI('victory');
+        await capture('VictoryReloaded');
+        view = await click('SettlementPage/Restart');
+        check(view.ui.team && view.save === victory.save, 'Restart must preserve frozen victory until confirmation');
+        await click('TeamPage/Roster_0');
+        await click('TeamPage/Roster_2');
+        view = await click('TeamPage/ConfirmTeam');
+        check(view.snapshot.revision === 0 && view.snapshot.phase === 'map' && view.save !== victory.save,
+            'Confirmation must create a different session, not unfreeze the old one');
+        const node = view.snapshot.map.nodes.find(n => n.kind === 'battle'
+            && distance(n.coord, view.snapshot.map.position) === 1);
+        check(node, 'Expected an adjacent normal battle for actual defeat');
+        view = await advance(tile(node.coord), 'right');
+        for (let turn = 0; view.snapshot.phase === 'battle' && turn < 40; turn += 1) {
+            view = await advance('BattlePage/EndTurn');
+        }
+        check(view.snapshot.phase === 'defeat' && view.snapshot.party.every(hero => !hero.alive && hero.hp === 0),
+            'Repeated enemy attacks must produce actual defeat');
+        view = await frozenUI('defeat');
+        await capture('DefeatFrozen');
+        const defeat = view;
+        view = await resume();
+        unchanged(defeat, view, 'Defeat reload differs from settlement save');
+        view = await frozenUI('defeat');
+        await capture('DefeatReloaded');
+        const defeatRevision = view.snapshot.revision;
+        view = await click('SettlementPage/Restart');
+        check(view.ui.team && view.save === defeat.save, 'Restart must preserve frozen defeat before confirmation');
+        await page.waitForTimeout(200);
+        check(errors.length === 0 && httpErrors.length === 0, 'T116 browser or network errors detected');
+        return { result: 'T116 FR-4 WEB PASS', source: 'web-build', url, floorCount, errors, httpErrors,
+            contextPrevented, victoryRevision: finalRevision, victoryPartyHp: finalPartyHp,
+            defeatRevision, defeatPartyHp: defeat.snapshot.party.map(hero => hero.hp),
+            settlementReloads: 2, frozenMouseAttempts: 24, frozenKeyboardAttempts: keyboardTrace.length,
+            mouseActions: trace.length, keyboardActions: keyboardTrace.length, keyboardTrace,
+            scope: 'Actual three-floor victory and actual defeat; UI controls and keyboard frozen before/after reload. All core GameInput types are covered by unit tests, not directly injected in the browser.', trace };
+    }
     view = await click('SettlementPage/Restart');
     check(view.ui.team && view.save === settledSave, 'Restart must return to team page without erasing settled save');
     for (const index of [1, 0, 2]) await click(`TeamPage/Roster_${index}`);

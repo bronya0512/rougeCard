@@ -10,6 +10,7 @@ import {
     SAVE_SCHEMA_VERSION,
     isSaveData,
     type GameConfig,
+    type GameInput,
     type StoragePort,
 } from '../../assets/core/index';
 import { GameSession, SAVE_KEY } from '../../assets/game/GameSession';
@@ -17,6 +18,7 @@ import { GameSession, SAVE_KEY } from '../../assets/game/GameSession';
 class MemoryStorage implements StoragePort {
     readonly data = new Map<string, string>();
     writes = 0;
+    removals = 0;
     get(key: string): string | null {
         return this.data.has(key) ? this.data.get(key)! : null;
     }
@@ -25,6 +27,7 @@ class MemoryStorage implements StoragePort {
         this.data.set(key, value);
     }
     remove(key: string): void {
+        this.removals += 1;
         this.data.delete(key);
     }
 }
@@ -515,3 +518,105 @@ test('T115/AC-12: after actual first-hero death, reload preserves the next livin
     assert.equal(again.party[1]!.block, 0);
     assert.equal(storage.writes, writes + 4);
 });
+
+for (const outcome of ['victory', 'defeat'] as const) {
+    test(`T116/FR-4: actual ${outcome} and its reload reject all inputs without saving or reading the clock`, () => {
+        for (const floorCount of [1, 3, 4, 5] as const) {
+            const storage = new MemoryStorage();
+            const base = makeConfig(12);
+            const config: GameConfig = { ...base, floorCount, startHp: 200,
+                enemies: outcome === 'victory'
+                    ? [{ ...base.enemies[0]!, hp: 4, damage: 1 }, { ...base.enemies[1]!, hp: 8, damage: 1 }]
+                    : [{ ...base.enemies[0]!, hp: 100, damage: 200 }, base.enemies[1]!],
+            };
+            let clockReads = 0;
+            const now = () => { clockReads += 1; return 100; };
+            const session = new GameSession(config, { storage, now });
+            for (let step = 0; session.snapshot.phase !== outcome && step < 300; step += 1) {
+                const s = session.snapshot;
+                let input: GameInput;
+                if (s.phase === 'map') {
+                    const node = s.map.nodes.find(n => hexDistance(n.coord, s.map.position) === 1
+                        && (outcome === 'defeat' ? n.kind === 'battle'
+                            : hexDistance(n.coord, s.map.boss) < hexDistance(s.map.position, s.map.boss)));
+                    if (node === undefined) throw new Error('No path to settlement');
+                    input = { type: 'move', to: node.coord };
+                } else if (s.phase === 'reward') {
+                    input = { type: 'chooseReward', defId: s.rewardCandidates[0]!.id };
+                } else if (s.phase === 'battle') {
+                    const card = s.hand.find(c => c.playable && c.def.effect.kind === 'attack');
+                    input = outcome === 'defeat' || card === undefined ? { type: 'endTurn' }
+                        : { type: 'playCard', uid: card.uid };
+                } else {
+                    throw new Error(`Unexpected settlement phase ${s.phase}`);
+                }
+                const writes = storage.writes;
+                const next = session.dispatch(input);
+                assert.equal(next.lastRejection, null);
+                assert.ok(next.revision > s.revision);
+                assert.equal(storage.writes, writes + 1);
+            }
+            const before = session.snapshot;
+            assert.equal(before.phase, outcome);
+            if (outcome === 'victory') {
+                assert.equal(before.floor, floorCount);
+                assert.equal(GameSession.readSave(storage)!.state.completedMaps.length, floorCount - 1);
+            } else {
+                assert.ok(before.party.every(hero => !hero.alive && hero.hp === 0));
+            }
+            const saved = GameSession.readSave(storage)!;
+            assert.equal(saved.state.phase, outcome);
+            const bytes = storage.get(SAVE_KEY);
+            const writes = storage.writes;
+            const removals = storage.removals;
+            const reads = clockReads;
+            const resumed = GameSession.load(storage, config, now);
+            assert.deepEqual(resumed.snapshot, before);
+            assert.equal(storage.writes, writes);
+            assert.equal(storage.removals, removals);
+            assert.equal(clockReads, reads);
+            const adjacent = before.map.nodes.find(n => hexDistance(n.coord, before.map.position) === 1)!;
+            const uid = saved.state.deck.hand[0]?.uid ?? saved.state.deck.discardPile[0]!.uid;
+            const inputs: Record<GameInput['type'], readonly GameInput[]> = {
+                start: [{ type: 'start' }],
+                move: [{ type: 'move', to: adjacent.coord }, { type: 'move', to: { q: 99, r: 99 } }],
+                playCard: [{ type: 'playCard', uid, targetId: before.party[0]!.id },
+                    { type: 'playCard', uid: 'missing-card', targetId: 'missing-hero' }],
+                endTurn: [{ type: 'endTurn' }],
+                chooseReward: [{ type: 'chooseReward', defId: config.cardDefs[0]!.id },
+                    { type: 'chooseReward', defId: 'missing-reward' }],
+            };
+            for (const current of [session, resumed]) {
+                for (let repeat = 0; repeat < 2; repeat += 1) {
+                    for (const group of Object.values(inputs)) {
+                        for (const input of group) {
+                            const result = current.dispatch(input);
+                            assert.equal(result.lastRejection, 'game already settled');
+                            assert.deepEqual({ ...result, lastRejection: null }, before);
+                            assert.deepEqual(current.snapshot, before);
+                            assert.equal(current.snapshot.revision, before.revision);
+                            assert.equal(storage.get(SAVE_KEY), bytes);
+                            assert.equal(storage.writes, writes);
+                            assert.equal(storage.removals, removals);
+                            assert.equal(clockReads, reads);
+                            assert.deepEqual(GameSession.readSave(storage), saved);
+                        }
+                    }
+                }
+                const resumedAgain = GameSession.load(storage, config, now);
+                assert.deepEqual(resumedAgain.snapshot, before);
+                assert.equal(storage.writes, writes);
+                assert.equal(storage.removals, removals);
+                assert.equal(clockReads, reads);
+            }
+            for (const [index, current] of [session, resumed].entries()) {
+                current.save();
+                assert.equal(storage.writes, writes + index + 1);
+                assert.equal(clockReads, reads + index + 1);
+                assert.equal(storage.get(SAVE_KEY), bytes);
+                assert.deepEqual(GameSession.readSave(storage), saved);
+                assert.equal(storage.removals, removals);
+            }
+        }
+    });
+}
