@@ -1,0 +1,30 @@
+{
+  "buildLog": "d:\\dev\\rougeCard\\rougeCard\\temp\\builder\\log\\web-desktop2026-11-9 17-26.log",
+  "recentBuildLog": [
+    "2026-11-19 16:00:41 - debug: // ---- build task web-desktop：onAfterBuild ----",
+    "2026-11-19 16:00:41 - debug: // ---- build task web-desktop：onAfterBuild ---- (101ms)",
+    "2026-11-19 16:00:41 - debug: web-desktop:(onAfterBuild) in 101 ms ✓, progress: 56%",
+    "2026-11-19 16:00:41 - debug: cocos-service:(onAfterBuild) start..., progress: 56%",
+    "2026-11-19 16:00:41 - debug: // ---- build task cocos-service：onAfterBuild ----",
+    "2026-11-19 16:00:41 - debug: // ---- build task cocos-service：onAfterBuild ---- (196ms)",
+    "2026-11-19 16:00:41 - debug: cocos-service:(onAfterBuild) in 196 ms ✓, progress: 58%",
+    "2026-11-19 16:00:41 - debug: adsense-h5g-plugin:(onAfterBuild) start..., progress: 58%",
+    "2026-11-19 16:00:41 - debug: // ---- build task adsense-h5g-plugin：onAfterBuild ----",
+    "2026-11-19 16:00:42 - debug: // ---- build task adsense-h5g-plugin：onAfterBuild ---- (123ms)",
+    "2026-11-19 16:00:42 - debug: adsense-h5g-plugin:(onAfterBuild) in 123 ms ✓, progress: 60%",
+    "2026-11-19 16:00:42 - log: Asset DB is resume!",
+    "2026-11-19 16:00:42 - debug: builder:build-project-total (35646ms)",
+    "2026-11-19 16:00:42 - debug: build task(web-desktop) in 35646!",
+    "2026-11-19 16:00:42 - debug: [Build Memory track]: builder:build-project-total start:249.71MB, end 252.88MB, increase: 3.17MB",
+    "2026-11-19 16:00:42 - debug: ================================ build Task (web-desktop) Finished in (35 s)ms ================================"
+  ],
+  "webTasks": [
+    {
+      "id": "1794216418285",
+      "state": "success",
+      "progress": 1,
+      "message": "2026-11-19 16:00:42 build success in 35 s!",
+      "time": "2026-11-19 16:00:06"
+    }
+  ]
+}

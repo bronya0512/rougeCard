@@ -4,6 +4,7 @@ import {
 } from 'cc';
 import { hexDistance } from '../core';
 import type { CardDef, GameInput, HexCoord, MapNode, SaveData, Snapshot, StoragePort } from '../core';
+import { BattleArtView } from './BattleArtView';
 import { BattleSelection } from './BattleSelection';
 import type { BattleTarget } from './BattleSelection';
 import { GameSession } from './GameSession';
@@ -63,9 +64,13 @@ export class GameRoot extends Component {
     private lastFloor = 0;
     private feedback = '';
     private readonly hexSize = 58;
+    private battleArt!: BattleArtView;
 
     onLoad(): void {
         this.buildUi();
+        this.battleArt = new BattleArtView(this.battlePage, () => {
+            if (this.storage !== undefined) this.render();
+        });
     }
 
     start(): void {
@@ -77,6 +82,7 @@ export class GameRoot extends Component {
         input.off(Input.EventType.MOUSE_UP, this.onMouse, this);
         input.off(Input.EventType.KEY_DOWN, this.onKey, this);
         this.selection.cancel();
+        this.battleArt.destroy();
         for (const node of [this.teamPage, this.mapPage, this.battlePage, this.rewardPage, this.settlementPage,
             this.headerLabel.node, this.hintLabel.node, this.node.getChildByName('GameBg')]) {
             if (node !== null) node.destroy();
@@ -354,8 +360,14 @@ export class GameRoot extends Component {
     private renderBattle(s: Snapshot): void {
         const selected = s.hand.find(card => card.uid === this.selection.selectedUid);
         if (s.enemy !== null) {
-            this.enemy.label.string = `${s.enemy.id === 'boss' ? 'BOSS' : '怪物'}\n\nHP ${s.enemy.hp}/${s.enemy.maxHp}\n\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`;
-            this.paint(this.enemy, new Color(52, 34, 43), selected?.def.effect.kind === 'attack' ? C.gold : C.red,
+            const boss = s.map.nodes.some(node => node.kind === 'boss' && hexDistance(node.coord, s.map.position) === 0);
+            const art = this.battleArt.target(this.enemy.node, boss ? 'enemy_boss' : 'enemy_normal');
+            this.enemy.label.node.setPosition(0, art ? -82 : 0);
+            this.enemy.label.node.getComponent(UITransform)!.setContentSize(226, art ? 64 : 217);
+            this.enemy.label.string = art
+                ? `${boss ? '魔王' : '怪物'} · HP ${s.enemy.hp}/${s.enemy.maxHp}\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`
+                : `${boss ? 'BOSS' : '怪物'}\n\nHP ${s.enemy.hp}/${s.enemy.maxHp}\n\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`;
+            this.paint(this.enemy, new Color(52, 34, 43, art ? 130 : 255), selected?.def.effect.kind === 'attack' ? C.gold : C.red,
                 selected?.def.effect.kind === 'attack');
         }
         for (let i = 0; i < this.heroes.length; i += 1) {
@@ -366,11 +378,21 @@ export class GameRoot extends Component {
             const color = this.colorTint(hero.color);
             panel.node.setPosition(s.party.length === 2 ? 255 + i * 230 : 150 + i * 185, 100);
             const target = hero.alive && selected?.def.effect.kind === 'defend';
-            panel.label.string = `${this.colorName(hero.color)}色角色\n\n${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}\n\n${hero.alive ? '点击可作为防御目标' : '不再产出能量'}`;
-            this.paint(panel, hero.alive ? C.panel : C.muted, target ? C.gold : color, target);
+            const art = this.battleArt.target(panel.node, `hero_${hero.color}`, hero.alive);
+            panel.label.node.setPosition(0, art ? -82 : 0);
+            panel.label.node.getComponent(UITransform)!.setContentSize(151, art ? 64 : 217);
+            panel.label.string = art
+                ? `${this.colorName(hero.color)} · ${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}${hero.alive ? '' : ' · 停止产能'}`
+                : `${this.colorName(hero.color)}色角色\n\n${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}\n\n${hero.alive ? '点击可作为防御目标' : '不再产出能量'}`;
+            this.paint(panel, art ? new Color(28, 39, 55, hero.alive ? 100 : 190) : hero.alive ? C.panel : C.muted,
+                target ? C.gold : color, target);
         }
         const e = s.energy;
-        this.energyLabel.string = `可用能量   红 ${e.red}   绿 ${e.green}   蓝 ${e.blue}   白 ${e.white}     ·     选牌后点击怪物 / 队友`;
+        const energyArt = this.battleArt.energy(e);
+        this.energyLabel.node.setPosition(energyArt ? 270 : 0, -45);
+        this.energyLabel.node.getComponent(UITransform)!.setContentSize(energyArt ? 540 : 1160, 36);
+        this.energyLabel.string = energyArt ? `白 ${e.white}   ·   选牌后点击怪物 / 队友`
+            : `可用能量   红 ${e.red}   绿 ${e.green}   蓝 ${e.blue}   白 ${e.white}     ·     选牌后点击怪物 / 队友`;
         this.handLabel.string = `手牌 ${s.hand.length}   抽牌 ${s.drawCount}   弃牌 ${s.discardCount}`;
         while (this.handCards.length < s.hand.length) {
             this.handCards.push(this.panel(`HandCard_${this.handCards.length}`, this.battlePage, 0, -198, 176, 190, '', 18));
@@ -385,7 +407,9 @@ export class GameRoot extends Component {
             panel.node.setPosition((i - (s.hand.length - 1) / 2) * spacing, chosen ? -188 : -198);
             panel.label.string = this.cardText(card.def) + `\n\n${chosen ? '已选择 · 点击目标' : card.playable ? '左键选择' : '能量不足'}`;
             panel.label.color = card.playable ? C.text : C.dim;
-            this.paint(panel, card.playable ? C.panel : C.muted, chosen ? C.gold
+            const art = this.battleArt.card(panel.node, card.def, chosen, card.playable, this.colorTint(card.def.color));
+            panel.label.node.active = !art;
+            this.paint(panel, art ? new Color(28, 39, 55, 0) : card.playable ? C.panel : C.muted, chosen ? C.gold
                 : card.playable ? this.colorTint(card.def.color) : C.line, chosen);
         }
         this.cancelButton.node.active = this.selection.selectedUid !== null;

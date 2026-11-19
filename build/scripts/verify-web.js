@@ -7,9 +7,13 @@ async page => {
     const legacyDefeat = !preview && /[?&]verify=t117(?:&|$)/.test(url);
     const adapterRegression = !preview && /[?&]verify=t118(?:&|$)/.test(url);
     const finalAcceptance = !preview && /[?&]verify=t109(?:&|$)/.test(url);
-    const prefix = finalAcceptance ? 'M1Final' : adapterRegression ? 'AdapterRegression' : legacyDefeat ? 'LegacyDefeat'
+    const battleArt = /[?&]verify=art002(?:&|$)/.test(url);
+    const prefix = battleArt ? preview ? 'BattleArtPreview' : 'BattleArt' : finalAcceptance ? 'M1Final'
+        : adapterRegression ? 'AdapterRegression' : legacyDefeat ? 'LegacyDefeat'
         : settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
         : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
+    const evidenceDir = battleArt ? 'specs/002-battle-art' : 'specs/001-core-loop';
+    const artChecks = [];
     const errors = [];
     const httpErrors = [];
     const trace = [];
@@ -49,7 +53,62 @@ async page => {
         return { snapshot: root.session.snapshot, ui,
             save: localStorage.getItem('roguecard.save.v1') };
     });
-    const capture = name => page.screenshot({ path: `specs/001-core-loop/${prefix}-${name}.png`, fullPage: true });
+    const capture = async name => {
+        if (battleArt) {
+            const before = await read();
+            for (let attempt = 0; attempt < 120; attempt += 1) {
+                const loaded = await page.evaluate(async () => {
+                    const cc = await System.import('cc');
+                    const canvas = cc.director.getScene()?.getChildByName('Canvas');
+                    return canvas?.components.find(component => component.teamSelection)?.battleArt?.frames.size === 12;
+                });
+                if (loaded) break;
+                await page.waitForTimeout(250);
+            }
+            const report = await page.evaluate(async () => {
+                const cc = await System.import('cc');
+                const canvas = cc.director.getScene().getChildByName('Canvas');
+                const root = canvas.components.find(component => component.teamSelection);
+                const art = root.battleArt;
+                if (root.choosingTeam || root.session.snapshot.phase !== 'battle') return { count: art.frames.size, battle: false };
+                const s = root.session.snapshot;
+                const boss = s.map.nodes.some(node => node.kind === 'boss' && node.coord.q === s.map.position.q && node.coord.r === s.map.position.r);
+                const matches = (node, key, flip) => {
+                    const sprite = node.getComponent(cc.Sprite);
+                    return node.activeInHierarchy && sprite.spriteFrame === art.frames.get(key) && (node.scale.x < 0) === flip;
+                };
+                const heroes = s.party.map((hero, i) => {
+                    const panel = root.heroes[i];
+                    const portrait = panel.node.getChildByName('Portrait');
+                    return matches(portrait, `hero_${hero.color}`, hero.color === 'blue')
+                        && portrait.getComponent(cc.Sprite).color.a === (hero.alive ? 255 : 170)
+                        && panel.label.string.includes(hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡');
+                });
+                const enemy = matches(root.enemy.node.getChildByName('Portrait'), boss ? 'enemy_boss' : 'enemy_normal', boss);
+                const cards = s.hand.map((card, i) => {
+                    const node = root.handCards[i].node.getChildByName('CardArt');
+                    const window = node.getChildByName('IllustrationWindow');
+                    const image = window.getChildByName('Illustration');
+                    const frame = node.getChildByName('Frame');
+                    return matches(image, card.def.effect.kind === 'attack' ? 'icon_attack' : 'icon_defend', false)
+                        && matches(frame, 'card_frame', false) && window.getComponent(cc.Mask).type === cc.Mask.Type.GRAPHICS_RECT
+                        && node.getChildByName('CardTitle').getComponent(cc.Label).string === card.def.name
+                        && node.getChildByName('CardCost').getComponent(cc.Label).string === String(card.def.cost);
+                });
+                return { count: art.frames.size, battle: true, party: s.party.map(hero => hero.color), heroes, enemy, boss, cards,
+                    background: matches(root.battlePage.getChildByName('BattleBackground'), 'battle_bg', false),
+                    energy: root.battlePage.getChildByName('EnergyArt').activeInHierarchy };
+            });
+            check(report.count === 12, 'Not all twelve battle art resources loaded');
+            if (report.battle) check(report.heroes.every(Boolean) && report.enemy && report.cards.every(Boolean)
+                && report.background && report.energy, `Battle art mismatch at ${name}`);
+            const after = await read();
+            check(JSON.stringify(before.snapshot) === JSON.stringify(after.snapshot) && before.save === after.save,
+                'Loading or capturing art changed gameplay/save');
+            artChecks.push({ name, ...report });
+        }
+        return page.screenshot({ path: `${evidenceDir}/${prefix}-${name}.png`, fullPage: true });
+    };
     const clickPoints = new Map();
     const click = async (path, button = 'left', allowInactive = false) => {
         const point = await page.evaluate(async ({ path, allowInactive, previousPoint }) => {
@@ -467,6 +526,7 @@ async page => {
         if (rest) view = await walk(rest.coord);
         view = await walk(view.snapshot.map.boss);
         check(view.ui.battle && view.snapshot.enemy.id === 'boss', 'Boss page missing');
+        if (battleArt) await capture(`BossFloor${floor}`);
         view = await fight();
         if (floor < floorCount) {
             check(view.snapshot.phase === 'map' && view.snapshot.floor === floor + 1 && !view.ui.settlement,
@@ -582,10 +642,23 @@ async page => {
     const beforeResume = view;
     view = await resume();
     unchanged(beforeResume, view, 'Three-person battle reload changed party/order/cards');
+    if (battleArt) {
+        await capture('ThreeReloaded');
+        for (let attempt = 0; view.snapshot.party[0].alive && attempt < 20; attempt += 1) {
+            view = await advance('BattlePage/EndTurn');
+        }
+        check(!view.snapshot.party[0].alive && view.snapshot.phase === 'battle', 'Expected actual leader death in three-person battle');
+        await capture('LeaderDead');
+        const dead = view;
+        view = await resume();
+        unchanged(dead, view, 'Dead leader art reload changed state/save');
+        await capture('DeadReloaded');
+    }
     await page.waitForTimeout(200);
     check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
     check(httpErrors.length === 0, `HTTP errors: ${httpErrors.join('; ')}`);
-    return { result: preview ? 'T112 PREVIEW PASS' : 'AC-15~24 WEB PASS', source: preview ? 'editor-preview' : 'web-build',
+    return { result: battleArt ? preview ? '002 BATTLE ART PREVIEW PASS' : '002 BATTLE ART WEB PASS'
+        : preview ? 'T112 PREVIEW PASS' : 'AC-15~24 WEB PASS', source: preview ? 'editor-preview' : 'web-build',
         url, floorCount, errors, httpErrors, contextPrevented, finalRevision, finalPartyHp, mouseActions: trace.length,
-        keyboardActions: 0, trace };
+        keyboardActions: 0, ...(battleArt ? { artChecks } : {}), trace };
 }
