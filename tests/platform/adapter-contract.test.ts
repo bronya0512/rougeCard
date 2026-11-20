@@ -8,6 +8,7 @@ import {
 import type { GameConfig, GameInput, PlatformAdapter, SaveData, Snapshot } from '../../assets/core';
 import { GameSession, SAVE_KEY } from '../../assets/game/GameSession';
 import { TeamSelection } from '../../assets/game/TeamSelection';
+import { defaultConfigPackage } from '../config-fixture';
 import { createWebAdapter } from '../../assets/platform/web';
 import { createWxAdapter } from '../../assets/platform/wx';
 import { createWinAdapter } from '../../assets/platform/win';
@@ -144,7 +145,7 @@ const cases = [
 for (const item of cases) {
     test(`T118/AC-1: ${item.name} S1 and resumed suffixes match across web/wx/win factories`, () => {
         withWebStorage(() => {
-            const selection = new TeamSelection();
+            const selection = new TeamSelection(defaultConfigPackage().content);
             for (const id of item.ids) assert.equal(selection.toggle(id), true);
             const base = selection.createConfig(item.seed, item.floors);
             const c: GameConfig = { ...base, drawPerTurn: 2, startHp: item.outcome === 'victory' ? 1000 : 5,

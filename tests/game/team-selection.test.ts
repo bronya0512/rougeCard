@@ -5,11 +5,12 @@ import * as assert from 'node:assert/strict';
 import { advance, createFixedClock, createSeededRng, hexDistance, initGame, isSaveData } from '../../assets/core';
 import type { GameConfig, GameState, StoragePort } from '../../assets/core';
 import { TeamSelection } from '../../assets/game/TeamSelection';
+import { defaultConfigPackage } from '../config-fixture';
 import { BattleSelection } from '../../assets/game/BattleSelection';
 import { GameSession, SAVE_KEY } from '../../assets/game/GameSession';
 
 function config(ids = ['hero-red', 'hero-green', 'hero-blue']): GameConfig {
-    const selected = new TeamSelection();
+    const selected = new TeamSelection(defaultConfigPackage().content);
     ids.forEach(id => selected.toggle(id));
     return selected.createConfig(20261116, 3);
 }
@@ -35,7 +36,7 @@ class MemoryStorage implements StoragePort {
 }
 
 test('AC-22: two or three unique roster characters can confirm, never zero or one', () => {
-    const selected = new TeamSelection();
+    const selected = new TeamSelection(defaultConfigPackage().content);
     assert.equal(selected.canConfirm, false);
     assert.throws(() => selected.createConfig(1, 3));
     assert.equal(selected.toggle('missing'), false);
@@ -183,7 +184,7 @@ test('AC-24: selection and read-only save inspection never overwrite existing pr
     session.save();
     const raw = storage.get(SAVE_KEY);
     const writes = storage.writes;
-    const selected = new TeamSelection();
+    const selected = new TeamSelection(defaultConfigPackage().content);
     selected.toggle('hero-blue'); selected.toggle('hero-green');
     selected.createConfig(1, 5);
     assert.equal(GameSession.readSave(storage)!.state.party.length, 3);

@@ -1,0 +1,11 @@
+{
+  "seed": 20261116,
+  "floorCount": 3,
+  "mapRadius": 2,
+  "startHp": 30,
+  "energyPerTurn": 1,
+  "drawPerTurn": 5,
+  "restHeal": 10,
+  "rewardCount": 3,
+  "restNodes": 1
+}

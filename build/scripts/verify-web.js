@@ -7,12 +7,13 @@ async page => {
     const legacyDefeat = !preview && /[?&]verify=t117(?:&|$)/.test(url);
     const adapterRegression = !preview && /[?&]verify=t118(?:&|$)/.test(url);
     const finalAcceptance = !preview && /[?&]verify=t109(?:&|$)/.test(url);
-    const battleArt = /[?&]verify=art002(?:&|$)/.test(url);
-    const prefix = battleArt ? preview ? 'BattleArtPreview' : 'BattleArt' : finalAcceptance ? 'M1Final'
+    const centralConfig = /[?&]verify=config003(?:&|$)/.test(url);
+    const battleArt = centralConfig || /[?&]verify=art002(?:&|$)/.test(url);
+    const prefix = centralConfig ? preview ? 'ConfigPreview' : 'Config' : battleArt ? preview ? 'BattleArtPreview' : 'BattleArt' : finalAcceptance ? 'M1Final'
         : adapterRegression ? 'AdapterRegression' : legacyDefeat ? 'LegacyDefeat'
         : settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
         : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
-    const evidenceDir = battleArt ? 'specs/002-battle-art' : 'specs/001-core-loop';
+    const evidenceDir = centralConfig ? 'specs/003-central-config' : battleArt ? 'specs/002-battle-art' : 'specs/001-core-loop';
     const artChecks = [];
     const errors = [];
     const httpErrors = [];
@@ -36,7 +37,8 @@ async page => {
         if (!root) return null;
         if (root.choosingTeam) return { snapshot: null, ui: { team: true,
             ids: root.teamSelection.selectedIds, canConfirm: root.teamSelection.canConfirm,
-            canContinue: root.continueRun.node.active }, save: localStorage.getItem('roguecard.save.v1') };
+            canContinue: root.continueRun.node.active, configLoading: root.configLoading,
+            configError: root.configError }, save: localStorage.getItem('roguecard.save.v1') };
         const label = node => node.getChildByName('Text').getComponent(cc.Label).string;
         const ui = {
             header: canvas.getChildByName('Header').getComponent(cc.Label).string,
@@ -199,8 +201,31 @@ async page => {
             if (stats) await page.locator('#btn-show-fps').click();
             await page.waitForTimeout(200);
         }
-        const team = await click('StartButton');
+        let team = await click('StartButton');
         check(team.ui.team && team.snapshot === null, 'START did not show pre-session team selection');
+        const originalSave = team.save;
+        for (let attempt = 0; team.ui.configLoading && attempt < 120; attempt += 1) {
+            await page.waitForTimeout(250);
+            team = await read();
+        }
+        check(!team.ui.configLoading && !team.ui.configError, `Configuration failed: ${team.ui.configError}`);
+        check(team.save === originalSave && team.snapshot === null, 'Configuration loading changed save/state');
+        if (centralConfig) {
+            const report = await page.evaluate(async () => {
+                const cc = await System.import('cc');
+                const root = cc.director.getScene().getChildByName('Canvas').components.find(component => component.teamSelection);
+                const { content, presentation } = root.configPackage;
+                const labels = root.rosterCards.map(panel => panel.label.string);
+                return { ready: content.characters.length === 3 && Object.keys(presentation).length === 12,
+                    displayed: content.characters.every((hero, i) => labels[i].includes(`HP ${content.game.startHp}`)
+                        && labels[i].includes(`能量 ${content.game.energyPerTurn} / 回合`)
+                        && labels[i].includes(`起始牌 ${hero.startingDeck.length} 张`)
+                        && hero.startingDeck.every(id => labels[i].includes(content.cards.find(card => card.id === id).name))),
+                    game: content.game, characters: content.characters };
+            });
+            check(report.ready && report.displayed, 'Team display differs from validated JSON');
+            await page.screenshot({ path: `${evidenceDir}/${prefix}-Team.png`, fullPage: true });
+        }
         return team;
     };
     const resume = async () => {
@@ -657,7 +682,8 @@ async page => {
     await page.waitForTimeout(200);
     check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
     check(httpErrors.length === 0, `HTTP errors: ${httpErrors.join('; ')}`);
-    return { result: battleArt ? preview ? '002 BATTLE ART PREVIEW PASS' : '002 BATTLE ART WEB PASS'
+    return { result: centralConfig ? preview ? '003 CONFIG PREVIEW PASS' : '003 CONFIG WEB PASS'
+        : battleArt ? preview ? '002 BATTLE ART PREVIEW PASS' : '002 BATTLE ART WEB PASS'
         : preview ? 'T112 PREVIEW PASS' : 'AC-15~24 WEB PASS', source: preview ? 'editor-preview' : 'web-build',
         url, floorCount, errors, httpErrors, contextPrevented, finalRevision, finalPartyHp, mouseActions: trace.length,
         keyboardActions: 0, ...(battleArt ? { artChecks } : {}), trace };

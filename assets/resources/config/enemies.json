@@ -1,0 +1,4 @@
+[
+  { "id": "normal", "hp": 12, "damage": 3 },
+  { "id": "boss", "hp": 24, "damage": 5 }
+]

@@ -1,0 +1,8 @@
+[
+  { "id": "r-atk", "name": "Red Strike", "color": "red", "cost": 1, "effect": { "kind": "attack", "damage": 4 } },
+  { "id": "r-def", "name": "Red Guard", "color": "red", "cost": 1, "effect": { "kind": "defend", "block": 3 } },
+  { "id": "g-atk", "name": "Green Strike", "color": "green", "cost": 1, "effect": { "kind": "attack", "damage": 4 } },
+  { "id": "g-def", "name": "Green Guard", "color": "green", "cost": 1, "effect": { "kind": "defend", "block": 3 } },
+  { "id": "b-atk", "name": "Blue Strike", "color": "blue", "cost": 1, "effect": { "kind": "attack", "damage": 4 } },
+  { "id": "b-def", "name": "Blue Guard", "color": "blue", "cost": 1, "effect": { "kind": "defend", "block": 3 } }
+]

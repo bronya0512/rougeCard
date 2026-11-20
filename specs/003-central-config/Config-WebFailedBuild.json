@@ -1,0 +1,20 @@
+{
+  "result": "003 WEB ACCEPTANCE FAILED",
+  "source": "web-build",
+  "webTasks": [
+    {
+      "state": "success",
+      "progress": 1,
+      "message": "2026-11-19 17:57:21 build success in 35 s!",
+      "time": "2026-11-19 17:56:46"
+    }
+  ],
+  "mainLastModified": "2026-11-19T17:57:18.023551",
+  "mainBytes": 59436,
+  "failure": "Team display differs from validated JSON",
+  "runtimeError": "TypeError: Cannot read properties of undefined (reading effect)",
+  "consoleErrorCount": 13,
+  "publishTransform": "Map spread emitted as [].concat(c)",
+  "fix": "Source uses Array.from(counts); Sprite cleanup uses separate for-of loops",
+  "rebuildRequired": true
+}

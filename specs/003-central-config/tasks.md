@@ -1,0 +1,28 @@
+# Tasks 003：配置集中管理
+
+规则：一次会话只执行一条task；技术计划确认后实现；所有判据满足及建立检查点后勾选。Git提交/push须另获用户授权。
+
+## 当前任务
+
+- [x] **T001** 将默认配置集中到五个文件并接入现有新局和表现（预计半天以内）
+  - 判据：spec AC-1～AC-6全部满足；原默认数值/队伍及卡牌顺序/奖励规则不变；配置非法或加载失败不覆盖存档，旧局可以继续；成功/失败/迟到回调生命周期有证据；新增与原单测、严格类型、分层、新Web构建和真实鼠标回归通过；记录证据与检查点。
+  - 状态（2026-11-19）：用户完成18:15修复后重建，新Web包config003回归、配置加载专项、美术生命周期与99单测/严格类型/分层全部通过，AC-1～AC-6已有证据。仅可回滚检查点未建立，保持未勾选；未获本feature提交/推送授权，不提交推送。
+  - 实现：五JSON原样保留seed20261116、3层、HP30、产能1、抽5、原2攻1防/每人3张、卡牌定义及敌人顺序、奖励颜色规则。core/content.ts以unknown解析合法数值、全部名单/重复定义/跨引用/既有效果；game/ConfigPackage.ts表现路径和flip校验；ConfigLoader.ts五JsonAsset一次初始化、成功/失败/迟到引用平衡；GameRoot配置或Storage任一先到均渲染、提前销毁拒绝回调、错误禁止新局但readSave保留旧局文字入口，名单与组队文本/总牌数派生；StartMenu/GameRoot取消Inspector层数覆盖。BattleArtView注入presentation路径/flip，不改布局和Mask。Cocos已自动生成新增TS及config目录/五JSON的meta，五JSON importer=json/imported=true。
+  - 单元/静态证据：新增25条配置黄金断言/合法修改/非法结构数值ID效果引用/完整表现/旧局保存与后续RNG/加载前拒绝新局测试；旧组队和适配器测试显式读取真实JSON（tests/config-fixture.ts），test-core.ps1固定Node测试工作目录并恢复。最终test-core.ps1 → 99/99通过及三adapter ES2015严格类型通过（temp/config003-tests-final.log）；Cocos内置tsc -p temp/art002-types.json → strict检查全部assets exit0，skipLibCheck/排除extensions（temp/config003-types-final.log）；check-layering.ps1 → core/game平台禁用标识0、状态经dispatch；全部修改源码/测试/浏览器脚本IDE诊断0，三个脚本node --check与git diff --check通过。不声明根tsc或真实三端通过。
+  - 预览回归：独立Edge会话config003-preview-final，http://127.0.0.1:7456/?verify=config003；verify-web.js → 003 CONFIG PREVIEW PASS/source=editor-preview，122次真实鼠标/0键盘，两人3层胜利、三人绿色防御第三位/首位阵亡/读档，16次12图映射/朝向/卡牌窗口/生命等检查；启动等待五JSON且存档不变，组队文本按真实值验证。正常console/pageerror/HTTP/requestfailed错误0，故障注入前完整控制台Errors0/Warnings0。ConfigPreview-Regression.json与ConfigPreview-*.png；已查看Team/ThreeBattle截图。001/002历史证据未覆盖。
+  - 配置专项：verify-config-loading.js在config003-preview隔离会话 → 003 CONFIG LOADING PASS/source=editor-preview，Loader成功/有意加载失败/非法字段/销毁后迟到各5请求，回调数1/1/1/0、一次初始化、引用回基线。真实GameRoot重复configure和加载前拒绝选队、新局禁止、配置失败及非法配置点击Confirm不写存档、点击Continue原Snapshot/存档保留并文字回退。仅注入JsonAsset回调修改HP42/5层/seed17/红起始牌5张/攻击7/蓝flip=false：组队显示与两人8牌生效，继续旧局仍HP30/3层/原Snapshot，只有明确Confirm才新建改值，真实右键进入战斗显示12图并蓝不翻转；最后GameRoot提前销毁安全、存档不变。9次真实鼠标/页面错误0，ConfigPreview-Loading.json与ConfigLoading-*-Preview.png，已查看ChangedTeam/failure截图。生产五JSON未改测试值。
+  - 美术生命周期：config003-preview-final运行verify-battle-art-lifecycle.js，按当前presentation注入映射 → 002 ART LIFECYCLE PASS/source=editor-preview（复用002脚本，证据写003）；成功/有意失败/迟到各12回调、失败文字回退、引用平衡、幂等与真实GameRoot销毁持有引用释放、Snapshot/存档不变、页面错误0。ConfigPreview-ArtLifecycle.json；12条失败警告只来自有意故障，与正常日志区分。原始日志temp/config003-preview-final.log / config003-loading-preview.log / config003-art-lifecycle.log。
+  - 修正记录：首轮严格编译发现CardDef只允许红绿蓝、测试floorCount误放MapView，已按实际类型修正；此前严格检查取消提示经用户同意后重跑exit0。第二轮测试98通过/1失败因非法场景复用行对象导致污染，rows helper改成独立对象后99通过。失败尝试不冒充通过。
+  - 首次Web实包验收失败（2026-11-19）：用户Build任务state=success/progress=1，17:57:21/35s，main/index.js为17:57:18/59436字节并包含ConfigLoader。独立Edge config003-web访问8123/?verify=config003，启动加载成功但Team display differs from validated JSON；运行时13条Cannot read properties of undefined (reading effect)，角色标签为空。实测发布编译把[...counts]变成[].concat(c)导致未遍历Map，源码已改Array.from(counts)；BattleArtView同类targets.values展开改为独立for-of清空Sprite。未修改build产物或全局构建配置。Config-WebFailedBuild.json与temp/config003-web-regression.log保留失败证据，未生成成功Web验收JSON。
+  - 修复后复验：test-core99/99和三adapter严格类型通过（temp/config003-webfix-tests.log）；全部assets strict exit0（temp/config003-webfix-types.log，skipLibCheck/排除extensions）；分层0平台泄漏、两修改源码和脚本IDE诊断0。config003-webfix-preview完整预览122鼠标/16图检查及组队显示通过，正常Errors0/Warnings0（temp/config003-webfix-preview.log）；强化生命周期在延迟Node销毁前断言所有SpriteFrame显式清空、成功/失败/迟到引用平衡和真实GameRoot销毁通过（temp/config003-webfix-art.log），刷新ConfigPreview-Regression.json和ConfigPreview-ArtLifecycle.json。配置加载器未改，其先前专项证据仍为预览，不冒充实包。
+  - 修复后Web构建证据：用户18:15:19重建成功/27s（任务state=success/progress=1），main/index.js为18:15:15/59504字节且包含ConfigLoader/Array.from修复，HTTP8123可用；Config-BuildEvidence.json。保留前次失败记录，修复后没有改build产物或构建配置。
+  - 修复后Web回归：独立Edge config003-web-final访问http://127.0.0.1:8123/?verify=config003，003 CONFIG WEB PASS/source=web-build，122鼠标/0键盘、两人3层胜利REV53/HP17与30、三人第三位防御/首位阵亡/战斗和阵亡读档，16次美术/生命/朝向/窗口检查含3层魔王。配置加载及选队不写存档，组队文本来自五JSON。正常console/pageerror/HTTP/requestfailed错误0，注入前完整console Errors0/Warnings0；Config-WebRegression.json及Config-*.png，已查看Team/ThreeBattle/DeadReloaded截图。另在config003-web-art-final干净会话完整回归再次通过，为美术生命周期准备未注入战斗；同样正常Errors0/Warnings0。
+  - Web配置专项：config003-web-final执行verify-config-loading.js → 003 CONFIG LOADING PASS/source=web-build，成功/加载失败/非法配置/迟到各5请求，回调1/1/1/0且引用平衡、只初始化一次。9次真实鼠标验证错误禁止新局、可继续旧局原Snapshot/存档且文字回退；仅注入JsonAsset的HP42/5层/seed17/红5牌/攻击7/蓝flip=false使新局两人8张并表现对应，旧局仍HP30/3层；只有明确Confirm覆盖旧档，提前销毁安全、页面错误0。Config-WebLoading.json和ConfigLoading-*-Web.png，已查看ChangedTeam/failure截图；生产五JSON经读回仍原默认值，无测试值落盘。
+  - Web美术生命周期：config003-web-art-final执行强化verify-battle-art-lifecycle.js → 002 ART LIFECYCLE PASS/source=web-build（复用脚本归档003），成功/失败/迟到各12回调、销毁前所有SpriteFrame显式清空、引用平衡、幂等/真实GameRoot销毁释放12个持有引用、存档不变、页面错误0；Config-WebArtLifecycle.json。12条有意加载失败警告与正常流程Errors0/Warnings0区分。
+  - 最终静态复验：99/99和三adapter ES2015严格类型通过（temp/config003-web-final-tests.log）；全部assets strict exit0（temp/config003-web-final-types.log，skipLibCheck/排除extensions）；分层0平台泄漏、修改源码/脚本IDE诊断0、三个脚本node --check和git diff --check通过。最终浏览器原始日志temp/config003-web-final-regression.log / config003-web-final-loading.log / config003-web-final-art.log；另干净会话日志temp/config003-web-art-regression.log。本轮只新增验收证据/同步文档，未再改代码。
+  - 范围：完成Web实包验收，不声称根tsc、微信/Windows真机或三人完整通关通过。001/002历史证据未覆盖，不扩展下一task。
+  - 检查点（2026-11-20）：用户明确授权提交003并push；本次Git提交feat(P2): close config T001 - centralized configuration记录检查点，随提交勾选，目标origin/main。只包含003实现/五JSON及meta/测试/验证脚本/003文档证据，不包含004规划。推送结果以实际Git输出为准，不强推、不跳过hooks。
+
+## 边界
+
+只迁移当前配置，不实施每人5张、新效果、特色角色、难度剧情或后续美术；不修改001/002历史记录。

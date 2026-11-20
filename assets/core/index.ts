@@ -11,3 +11,4 @@ export * from './map';
 export * from './engine';
 export * from './platform';
 export * from './team';
+export * from './content';

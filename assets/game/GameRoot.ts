@@ -8,9 +8,11 @@ import { BattleArtView } from './BattleArtView';
 import { BattleSelection } from './BattleSelection';
 import type { BattleTarget } from './BattleSelection';
 import { GameSession } from './GameSession';
-import { TeamSelection, TEAM_ROSTER } from './TeamSelection';
+import { ConfigLoader } from './ConfigLoader';
+import type { ConfigPackage } from './ConfigPackage';
+import { TeamSelection } from './TeamSelection';
 
-const { ccclass, property } = _decorator;
+const { ccclass } = _decorator;
 
 const C = {
     bg: new Color(17, 23, 34), panel: new Color(28, 39, 55),
@@ -25,13 +27,15 @@ type MapTile = { panel: Panel; coord: HexCoord };
 
 @ccclass('GameRoot')
 export class GameRoot extends Component {
-    @property({ range: [3, 5, 1], tooltip: '新局楼层数量：3、4或5；旧存档保留原有层数' })
-    floorCount = 3;
-
     private session!: GameSession;
     private storage!: StoragePort;
     private readonly selection = new BattleSelection();
-    private readonly teamSelection = new TeamSelection();
+    private teamSelection = new TeamSelection(null);
+    private readonly configLoader = new ConfigLoader();
+    private configPackage: ConfigPackage | null = null;
+    private configLoading = true;
+    private configError = '';
+    private disposed = false;
     private choosingTeam = true;
     private pendingSave: SaveData | null = null;
     private teamPage!: Node;
@@ -68,7 +72,19 @@ export class GameRoot extends Component {
 
     onLoad(): void {
         this.buildUi();
-        this.battleArt = new BattleArtView(this.battlePage, () => {
+        this.battleArt = new BattleArtView(this.battlePage, () => {}, null);
+        this.configLoader.load((config, error) => {
+            if (this.disposed) return;
+            this.configLoading = false;
+            this.configError = error;
+            this.configPackage = config;
+            this.teamSelection = new TeamSelection(config?.content ?? null);
+            if (config !== null) {
+                this.battleArt.destroy();
+                this.battleArt = new BattleArtView(this.battlePage, () => {
+                    if (!this.disposed && this.storage !== undefined) this.render();
+                }, config.presentation);
+            }
             if (this.storage !== undefined) this.render();
         });
     }
@@ -79,6 +95,8 @@ export class GameRoot extends Component {
     }
 
     onDestroy(): void {
+        this.disposed = true;
+        this.configLoader.destroy();
         input.off(Input.EventType.MOUSE_UP, this.onMouse, this);
         input.off(Input.EventType.KEY_DOWN, this.onKey, this);
         this.selection.cancel();
@@ -90,6 +108,7 @@ export class GameRoot extends Component {
     }
 
     configure(storage: StoragePort): void {
+        if (this.disposed || this.storage !== undefined) return;
         this.storage = storage;
         this.openTeam();
     }
@@ -104,8 +123,8 @@ export class GameRoot extends Component {
     }
 
     private beginTeam(): void {
-        if (!this.teamSelection.canConfirm) return;
-        const config = this.teamSelection.createConfig(20261116, this.floorCount);
+        if (this.configLoading || this.configPackage === null || !this.teamSelection.canConfirm) return;
+        const config = this.teamSelection.createConfig();
         const session = new GameSession(config, { storage: this.storage });
         session.save();
         this.session = session;
@@ -184,7 +203,7 @@ export class GameRoot extends Component {
         this.hintLabel.color = C.gold;
         this.teamPage = this.createNode('TeamPage', this.node, 0, 0, 1280, 720);
         this.label('TeamTitle', this.teamPage, 0, 245, 1100, 48, '选择 2～3 名角色 · 组成你的队伍', 28);
-        for (let i = 0; i < TEAM_ROSTER.length; i += 1) {
+        for (let i = 0; i < 3; i += 1) {
             this.rosterCards.push(this.panel(`Roster_${i}`, this.teamPage, (i - 1) * 300, 40, 260, 290, '', 22));
         }
         this.teamSummary = this.label('TeamSummary', this.teamPage, 0, -165, 1160, 75, '', 22);
@@ -286,19 +305,33 @@ export class GameRoot extends Component {
     private renderTeam(): void {
         const ids = this.teamSelection.selectedIds;
         this.headerLabel.string = '开局组队   /   TEAM';
-        this.hintLabel.string = '左键选择 / 取消 · 按选择顺序站位，第一位优先承受攻击';
-        for (let i = 0; i < TEAM_ROSTER.length; i += 1) {
-            const hero = TEAM_ROSTER[i]!;
+        this.hintLabel.string = this.configLoading ? '正在加载配置 · 暂不能开始新局'
+            : this.configError || '左键选择 / 取消 · 按选择顺序站位，第一位优先承受攻击';
+        const roster = this.teamSelection.roster;
+        const content = this.teamSelection.content;
+        for (let i = 0; i < this.rosterCards.length; i += 1) {
             const panel = this.rosterCards[i]!;
+            const hero = roster[i];
+            panel.node.active = hero !== undefined;
+            if (hero === undefined || content === null) continue;
             const index = ids.indexOf(hero.id);
-            panel.label.string = `${this.colorName(hero.color)}色角色\n\nHP 30 · ${this.colorName(hero.color)}能量 1 / 回合\n\n起始牌：攻击 ×2 · 防御 ×1\n攻击 4 · 格挡 3 · 费用 1\n\n${index >= 0 ? `已选 · 站位 ${index + 1}` : '左键加入队伍'}`;
+            const counts = new Map<string, number>();
+            for (const id of hero.startingDeck) counts.set(id, (counts.get(id) ?? 0) + 1);
+            const deck = Array.from(counts).map(([id, count]) => {
+                const card = content.cards.find(def => def.id === id)!;
+                const effect = card.effect.kind === 'attack' ? `攻击${card.effect.damage}` : `格挡${card.effect.block}`;
+                return `${card.name} ×${count}\n${effect} · 费用${card.cost}`;
+            }).join('\n');
+            panel.label.string = `${this.colorName(hero.color)}色角色\nHP ${content.game.startHp} · 能量 ${content.game.energyPerTurn} / 回合\n起始牌 ${hero.startingDeck.length} 张\n${deck}\n${index >= 0 ? `已选 · 站位 ${index + 1}` : '左键加入队伍'}`;
             this.paint(panel, C.panel, index >= 0 ? C.gold : this.colorTint(hero.color), index >= 0);
         }
-        const names = ids.map(id => this.colorName(TEAM_ROSTER.find(hero => hero.id === id)!.color));
-        this.teamSummary.string = ids.length === 0 ? '尚未选择角色 · 至少选择 2 名'
-            : `站位顺序：${names.join(' → ')}\n${ids.length} 名角色 · ${ids.length * 3} 张起始牌${this.teamSelection.canConfirm ? '' : ' · 还需选择一名'}`;
-        this.confirmTeam.label.string = this.teamSelection.canConfirm
-            ? this.pendingSave === null ? '确认队伍 · 进入地图' : '确认新局 · 替换旧存档' : '至少选择 2 名角色';
+        const names = ids.map(id => this.colorName(roster.find(hero => hero.id === id)!.color));
+        const deckCount = ids.reduce((count, id) => count + roster.find(hero => hero.id === id)!.startingDeck.length, 0);
+        this.teamSummary.string = this.configPackage === null ? this.configLoading ? '正在加载配置…'
+            : '配置不可用，不能新建游戏；有效旧存档仍可继续' : ids.length === 0 ? '尚未选择角色 · 至少选择 2 名'
+            : `站位顺序：${names.join(' → ')}\n${ids.length} 名角色 · ${deckCount} 张起始牌${this.teamSelection.canConfirm ? '' : ' · 还需选择一名'}`;
+        this.confirmTeam.label.string = this.configPackage === null ? this.configLoading ? '配置加载中' : '配置错误 · 禁止新建'
+            : this.teamSelection.canConfirm ? this.pendingSave === null ? '确认队伍 · 进入地图' : '确认新局 · 替换旧存档' : '至少选择 2 名角色';
         this.paint(this.confirmTeam, this.teamSelection.canConfirm ? new Color(45, 71, 62) : C.muted,
             this.teamSelection.canConfirm ? C.green : C.line);
         this.continueRun.node.active = this.pendingSave !== null;
@@ -479,8 +512,9 @@ export class GameRoot extends Component {
         if (this.choosingTeam) {
             if (event.getButton() !== EventMouse.BUTTON_LEFT) return;
             for (let i = 0; i < this.rosterCards.length; i += 1) {
-                if (this.hit(this.rosterCards[i]!.node, point)) {
-                    this.teamSelection.toggle(TEAM_ROSTER[i]!.id); this.render(); return;
+                const hero = this.teamSelection.roster[i];
+                if (hero !== undefined && this.hit(this.rosterCards[i]!.node, point)) {
+                    this.teamSelection.toggle(hero.id); this.render(); return;
                 }
             }
             if (this.hit(this.confirmTeam.node, point)) this.beginTeam();

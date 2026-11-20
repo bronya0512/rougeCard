@@ -1,0 +1,14 @@
+{
+  "webTasks": [
+    {
+      "state": "success",
+      "progress": 1,
+      "message": "2026-11-19 18:15:19 build success in 27 s!",
+      "time": "2026-11-19 18:14:51"
+    }
+  ],
+  "mainLastModified": "2026-11-19T18:15:15.967176",
+  "mainBytes": 59504,
+  "configLoaderIncluded": true,
+  "arrayFromFixIncluded": true
+}

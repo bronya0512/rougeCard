@@ -26,8 +26,9 @@ async page => {
             let refreshes = 0;
             let view;
             try {
-                cc.resources.load = (path, type, callback) => callbacks.push({ key: path.split('/')[0], callback });
-                view = new Art(parent, () => refreshes++);
+                cc.resources.load = (path, type, callback) => callbacks.push({
+                    key: Object.keys(rootArt.presentation).find(key => rootArt.presentation[key].path === path), callback });
+                view = new Art(parent, () => refreshes++, rootArt.presentation);
                 check(callbacks.length === 12, 'Each resource must load once');
                 if (mode === 'late') view.destroy();
                 for (const { key, callback } of callbacks) callback(mode === 'failure' ? new Error('intentional load failure') : undefined,
@@ -59,10 +60,14 @@ async page => {
                         root.render();
                     }
                 } else check(view.frames.size === 0 && refreshes === 0 && view.disposed, 'Late callback updated disposed view');
+                const sprites = [view.background, ...view.energyIcons, ...Array.from(view.targets.values())];
+                for (const card of view.cards.values()) sprites.push(card.image, card.frame);
                 view.destroy();
+                check(sprites.every(sprite => sprite.spriteFrame === null), 'Destroy did not explicitly clear every SpriteFrame');
                 view.destroy();
                 check(refsEqual(), 'Resource references did not return to baseline');
-                scenarios.push({ mode, callbacks: callbacks.length, refreshes, referencesBalanced: true, disposed: view.disposed });
+                scenarios.push({ mode, callbacks: callbacks.length, refreshes, referencesBalanced: true,
+                    spritesClearedBeforeNodeDestruction: true, disposed: view.disposed });
             } finally {
                 cc.resources.load = originalLoad;
                 if (view) view.destroy();

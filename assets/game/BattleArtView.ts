@@ -1,11 +1,8 @@
 import { Color, Label, Layers, Mask, Node, resources, Sprite, SpriteFrame, UITransform } from 'cc';
 import type { CardDef, Snapshot } from '../core';
 
-const ART_NAMES = [
-    'battle_bg', 'hero_red', 'hero_green', 'hero_blue', 'enemy_normal', 'enemy_boss',
-    'energy_red', 'energy_green', 'energy_blue', 'card_frame', 'icon_attack', 'icon_defend',
-] as const;
-type ArtName = typeof ART_NAMES[number];
+import { ART_NAMES } from './ConfigPackage';
+import type { ArtName, PresentationConfig } from './ConfigPackage';
 type CardArt = { node: Node; image: Sprite; frame: Sprite; title: Label; cost: Label; effect: Label; status: Label };
 
 export class BattleArtView {
@@ -18,7 +15,7 @@ export class BattleArtView {
     private readonly energyCounts: Label[] = [];
     private disposed = false;
 
-    constructor(private readonly page: Node, refresh: () => void) {
+    constructor(private readonly page: Node, refresh: () => void, readonly presentation: PresentationConfig | null) {
         this.background = this.sprite('BattleBackground', page, 0, 0);
         this.background.node.setSiblingIndex(0);
         this.background.color = new Color(100, 105, 118, 255);
@@ -28,8 +25,9 @@ export class BattleArtView {
             this.energyCounts.push(this.label(`EnergyCount_${i}`, this.energyNode, i * 150 + 50, 0, 64, 30, 20));
         }
         this.energyNode.active = false;
+        if (presentation === null) return;
         for (const name of ART_NAMES) {
-            resources.load(`${name}/spriteFrame`, SpriteFrame, (error, frame) => {
+            resources.load(presentation[name].path, SpriteFrame, (error, frame) => {
                 if (error || frame === undefined) {
                     if (!this.disposed) console.warn(`占位美术加载失败：${name}`);
                     return;
@@ -70,7 +68,7 @@ export class BattleArtView {
         return label;
     }
 
-    private show(sprite: Sprite, name: ArtName, width: number, height: number, flip = false, cover = false): boolean {
+    private show(sprite: Sprite, name: ArtName, width: number, height: number, cover = false): boolean {
         const frame = this.frames.get(name);
         sprite.node.active = frame !== undefined;
         if (frame === undefined) {
@@ -81,7 +79,7 @@ export class BattleArtView {
         const ratio = cover ? Math.max(width / frame.rect.width, height / frame.rect.height)
             : Math.min(width / frame.rect.width, height / frame.rect.height);
         sprite.node.getComponent(UITransform)!.setContentSize(frame.rect.width * ratio, frame.rect.height * ratio);
-        sprite.node.setScale(flip ? -1 : 1, 1, 1);
+        sprite.node.setScale(this.presentation?.[name].flip ? -1 : 1, 1, 1);
         return true;
     }
 
@@ -93,13 +91,13 @@ export class BattleArtView {
             this.targets.set(parent, sprite);
         }
         const width = parent.getComponent(UITransform)!.width - 12;
-        const visible = this.show(sprite, name, width, 165, name === 'hero_blue' || name === 'enemy_boss');
+        const visible = this.show(sprite, name, width, 165);
         sprite.color = alive ? Color.WHITE : new Color(110, 110, 110, 170);
         return visible;
     }
 
     energy(energy: Snapshot['energy']): boolean {
-        this.show(this.background, 'battle_bg', 1280, 720, false, true);
+        this.show(this.background, 'battle_bg', 1280, 720, true);
         const names = ['energy_red', 'energy_green', 'energy_blue'] as const;
         const values = [energy.red, energy.green, energy.blue];
         let ready = true;
@@ -130,7 +128,7 @@ export class BattleArtView {
             view = this.createCard(parent);
             this.cards.set(parent, view);
         }
-        const imageReady = this.show(view.image, card.effect.kind === 'attack' ? 'icon_attack' : 'icon_defend', 116, 110, false, true);
+        const imageReady = this.show(view.image, card.effect.kind === 'attack' ? 'icon_attack' : 'icon_defend', 116, 110, true);
         const frameReady = this.show(view.frame, 'card_frame', 138, 190);
         const ready = imageReady && frameReady;
         view.node.active = ready;
@@ -150,7 +148,9 @@ export class BattleArtView {
     destroy(): void {
         if (this.disposed) return;
         this.disposed = true;
-        for (const sprite of [this.background, ...this.energyIcons, ...this.targets.values()]) sprite.spriteFrame = null;
+        this.background.spriteFrame = null;
+        for (const sprite of this.energyIcons) sprite.spriteFrame = null;
+        for (const sprite of this.targets.values()) sprite.spriteFrame = null;
         for (const view of this.cards.values()) {
             view.image.spriteFrame = null;
             view.frame.spriteFrame = null;

@@ -1,0 +1,5 @@
+[
+  { "id": "hero-red", "color": "red", "startingDeck": ["r-atk", "r-atk", "r-def"] },
+  { "id": "hero-green", "color": "green", "startingDeck": ["g-atk", "g-atk", "g-def"] },
+  { "id": "hero-blue", "color": "blue", "startingDeck": ["b-atk", "b-atk", "b-def"] }
+]

@@ -53,9 +53,14 @@ if ($LASTEXITCODE -ne 0) {
 
 $compiledTests = @(Get-ChildItem -Path $outDir -Filter '*.test.js' -File -Recurse)
 Write-Host "[test-core] running $($compiledTests.Count) test file(s) with node --test ..."
-& node --test $compiledTests.FullName
-if ($LASTEXITCODE -ne 0) {
-    throw "Tests failed (exit $LASTEXITCODE)."
+Push-Location $repoRoot
+try {
+    & node --test $compiledTests.FullName
+    if ($LASTEXITCODE -ne 0) {
+        throw "Tests failed (exit $LASTEXITCODE)."
+    }
+} finally {
+    Pop-Location
 }
 
 # T105: verify all three platform adapters compile under the real Cocos config
