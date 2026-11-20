@@ -1,6 +1,7 @@
 async page => {
     const errors = [];
     const trace = [];
+    const evidenceDir = /[?&]verify=layout004(?:&|$)/.test(page.url()) ? 'specs/004-battle-layout' : 'specs/003-central-config';
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     const check = (value, message) => { if (!value) throw new Error(message); };
@@ -8,7 +9,7 @@ async page => {
         const cc = await System.import('cc');
         const canvas = cc.director.getScene().getChildByName('Canvas');
         const root = canvas.components.find(component => component.teamSelection);
-        if (!root || root.choosingTeam || !root.configPackage || root.battleArt.frames.size !== 12) throw new Error('Requires a loaded config003 battle session');
+        if (!root || root.choosingTeam || !root.configPackage || root.battleArt.frames.size !== 13) throw new Error('Requires a loaded config003 battle session');
         const check = (condition, message) => { if (!condition) throw new Error(message); };
         const content = root.configPackage.content;
         const documents = { game: content.game, characters: content.characters, cards: content.cards,
@@ -74,7 +75,9 @@ async page => {
             source.game.startHp = 42; source.game.floorCount = 5; source.game.seed = 17;
             source.characters[0].startingDeck = ['r-atk', 'r-atk', 'r-atk', 'r-def', 'r-def'];
             source.cards[0].effect.damage = 7;
-            source.presentation.hero_blue.flip = false;
+            source.presentation.hero_blue.flip = true;
+            source.presentation.hero_blue.displayHeight = 285.5;
+            source.presentation.enemy_normal.displayHeight = 180.5;
         }
         if (mode === 'invalid') source.game.floorCount = 1;
         try {
@@ -133,6 +136,9 @@ async page => {
             return { x: rect.x + position.x / element.width * rect.width,
                 y: rect.y + (element.height - position.y) / element.height * rect.height };
         }, path);
+        await page.mouse.move(1, 1);
+        await page.mouse.move(point.x, point.y);
+        await page.waitForTimeout(160);
         await page.mouse.click(point.x, point.y);
         await page.waitForTimeout(120);
         const view = await read();
@@ -150,7 +156,7 @@ async page => {
         check(JSON.stringify(view.snapshot) === setup.snapshot && view.raw === setup.raw, 'Bad config altered restored state');
         check(view.frames === 0 && view.fallbackCards && view.heroes.every(text => text.includes('色角色')),
             'Old run did not use text fallback');
-        await page.screenshot({ path: `specs/003-central-config/ConfigLoading-${mode}-${page.url().includes(':7456/') ? 'Preview' : 'Web'}.png`, fullPage: true });
+        await page.screenshot({ path: `${evidenceDir}/ConfigLoading-${mode}-${page.url().includes(':7456/') ? 'Preview' : 'Web'}.png`, fullPage: true });
         integration.push({ ...report, oldRunRestored: true, textFallback: true, savedStateUnchanged: true });
     }
     let report = await spawn('changed');
@@ -164,7 +170,7 @@ async page => {
     await click('TeamPage/Roster_0');
     view = await click('TeamPage/Roster_2');
     check(view.summary.includes('8 张起始牌') && view.raw === setup.raw, 'Changed deck count display or selection writes incorrect');
-    await page.screenshot({ path: `specs/003-central-config/ConfigLoading-ChangedTeam-${page.url().includes(':7456/') ? 'Preview' : 'Web'}.png`, fullPage: true });
+    await page.screenshot({ path: `${evidenceDir}/ConfigLoading-ChangedTeam-${page.url().includes(':7456/') ? 'Preview' : 'Web'}.png`, fullPage: true });
     view = await click('TeamPage/ConfirmTeam');
     const saved = JSON.parse(view.raw);
     check(view.snapshot.floorCount === 5 && view.snapshot.party.every(hero => hero.maxHp === 42)
@@ -186,20 +192,25 @@ async page => {
     trace.push({ path, button: 'right' });
     for (let i = 0; i < 120; i++) {
         view = await read();
-        if (view.frames === 12) break;
+        if (view.frames === 13) break;
         await page.waitForTimeout(100);
     }
-    check(view.snapshot.phase === 'battle' && view.frames === 12 && view.presentation.hero_blue.flip === false,
+    check(view.snapshot.phase === 'battle' && view.frames === 13 && view.presentation.hero_blue.flip === true,
         'Changed presentation not loaded');
-    const flip = await page.evaluate(async () => {
+    const sizing = await page.evaluate(async () => {
         const cc = await System.import('cc');
         const root = cc.director.getScene().getChildByName('Canvas').components.find(component => component.teamSelection);
-        return root.heroes[1].node.getChildByName('Portrait').scale.x;
+        return { flip: root.heroes[1].node.getChildByName('Portrait').scale.x,
+            blueHeight: root.battleArt.targetHeight(root.heroes[1].node),
+            redHeight: root.battleArt.targetHeight(root.heroes[0].node),
+            enemyHeight: root.battleArt.targetHeight(root.enemy.node) };
     });
-    check(flip === 1, 'Blue portrait ignored configured flip=false');
-    await page.screenshot({ path: `specs/003-central-config/ConfigLoading-ChangedBattle-${page.url().includes(':7456/') ? 'Preview' : 'Web'}.png`, fullPage: true });
+    check(sizing.flip === -1, 'Blue portrait ignored configured flip=true');
+    check(Math.abs(sizing.blueHeight - 285.5) < 0.01 && Math.abs(sizing.enemyHeight - 180.5) < 0.01
+        && sizing.redHeight === 245, 'Independent height configuration not honored');
+    await page.screenshot({ path: `${evidenceDir}/ConfigLoading-ChangedBattle-${page.url().includes(':7456/') ? 'Preview' : 'Web'}.png`, fullPage: true });
     integration.push({ mode: 'changed-new', newHP: 42, floorCount: 5, seed: 17, startingDeckCount: 8,
-        attack: 7, blueFlip: false, onlyExplicitConfirmReplacedSave: true });
+        attack: 7, blueFlip: true, sizing, onlyExplicitConfirmReplacedSave: true });
     const late = await spawn('late');
     integration.push(late);
     await page.waitForTimeout(200);

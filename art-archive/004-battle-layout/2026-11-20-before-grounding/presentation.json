@@ -1,0 +1,15 @@
+{
+  "battle_bg": { "path": "battle_bg/spriteFrame", "flip": false },
+  "hero_red": { "path": "hero_red/spriteFrame", "flip": false },
+  "hero_green": { "path": "hero_green/spriteFrame", "flip": false },
+  "hero_blue": { "path": "hero_blue/spriteFrame", "flip": false },
+  "enemy_normal": { "path": "enemy_normal/spriteFrame", "flip": true },
+  "enemy_boss": { "path": "enemy_boss/spriteFrame", "flip": true },
+  "energy_red": { "path": "energy_red/spriteFrame", "flip": false },
+  "energy_green": { "path": "energy_green/spriteFrame", "flip": false },
+  "energy_blue": { "path": "energy_blue/spriteFrame", "flip": false },
+  "energy_white": { "path": "energy_white/spriteFrame", "flip": false },
+  "card_frame": { "path": "card_frame/spriteFrame", "flip": false },
+  "icon_attack": { "path": "icon_attack/spriteFrame", "flip": false },
+  "icon_defend": { "path": "icon_defend/spriteFrame", "flip": false }
+}

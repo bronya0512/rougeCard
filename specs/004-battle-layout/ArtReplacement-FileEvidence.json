@@ -1,0 +1,57 @@
+[
+    {
+        "Name":  "hero_red",
+        "OldImageArchived":  true,
+        "NewImageMatches":  true,
+        "UUIDPreserved":  true,
+        "ArchivedMetaMatches":  true,
+        "ImportedDimensionsMatch":  true,
+        "Width":  896,
+        "Height":  896,
+        "SourceRenamed":  true
+    },
+    {
+        "Name":  "hero_green",
+        "OldImageArchived":  true,
+        "NewImageMatches":  true,
+        "UUIDPreserved":  true,
+        "ArchivedMetaMatches":  true,
+        "ImportedDimensionsMatch":  true,
+        "Width":  896,
+        "Height":  896,
+        "SourceRenamed":  true
+    },
+    {
+        "Name":  "hero_blue",
+        "OldImageArchived":  true,
+        "NewImageMatches":  true,
+        "UUIDPreserved":  true,
+        "ArchivedMetaMatches":  true,
+        "ImportedDimensionsMatch":  true,
+        "Width":  896,
+        "Height":  896,
+        "SourceRenamed":  true
+    },
+    {
+        "Name":  "enemy_normal",
+        "OldImageArchived":  true,
+        "NewImageMatches":  true,
+        "UUIDPreserved":  true,
+        "ArchivedMetaMatches":  true,
+        "ImportedDimensionsMatch":  true,
+        "Width":  896,
+        "Height":  896,
+        "SourceRenamed":  true
+    },
+    {
+        "Name":  "enemy_boss",
+        "OldImageArchived":  true,
+        "NewImageMatches":  true,
+        "UUIDPreserved":  true,
+        "ArchivedMetaMatches":  true,
+        "ImportedDimensionsMatch":  true,
+        "Width":  1600,
+        "Height":  896,
+        "SourceRenamed":  true
+    }
+]

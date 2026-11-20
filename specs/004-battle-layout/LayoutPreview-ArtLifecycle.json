@@ -1,0 +1,36 @@
+{
+  "result": "002 ART LIFECYCLE PASS",
+  "scenarios": [
+    {
+      "mode": "success",
+      "callbacks": 12,
+      "refreshes": 12,
+      "referencesBalanced": true,
+      "spritesClearedBeforeNodeDestruction": true,
+      "disposed": true
+    },
+    {
+      "mode": "failure",
+      "callbacks": 12,
+      "refreshes": 0,
+      "referencesBalanced": true,
+      "spritesClearedBeforeNodeDestruction": true,
+      "disposed": true
+    },
+    {
+      "mode": "late",
+      "callbacks": 12,
+      "refreshes": 0,
+      "referencesBalanced": true,
+      "spritesClearedBeforeNodeDestruction": true,
+      "disposed": true
+    }
+  ],
+  "rootDisposed": true,
+  "rootReferencesReleased": true,
+  "handTweensStopped": true,
+  "saveUnchanged": true,
+  "source": "editor-preview",
+  "intentionalFailures": 12,
+  "errors": []
+}

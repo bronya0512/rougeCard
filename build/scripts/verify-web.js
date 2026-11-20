@@ -7,13 +7,14 @@ async page => {
     const legacyDefeat = !preview && /[?&]verify=t117(?:&|$)/.test(url);
     const adapterRegression = !preview && /[?&]verify=t118(?:&|$)/.test(url);
     const finalAcceptance = !preview && /[?&]verify=t109(?:&|$)/.test(url);
-    const centralConfig = /[?&]verify=config003(?:&|$)/.test(url);
+    const battleLayout = /[?&]verify=layout004(?:&|$)/.test(url);
+    const centralConfig = battleLayout || /[?&]verify=config003(?:&|$)/.test(url);
     const battleArt = centralConfig || /[?&]verify=art002(?:&|$)/.test(url);
-    const prefix = centralConfig ? preview ? 'ConfigPreview' : 'Config' : battleArt ? preview ? 'BattleArtPreview' : 'BattleArt' : finalAcceptance ? 'M1Final'
+    const prefix = battleLayout ? preview ? 'LayoutPreview' : 'Layout' : centralConfig ? preview ? 'ConfigPreview' : 'Config' : battleArt ? preview ? 'BattleArtPreview' : 'BattleArt' : finalAcceptance ? 'M1Final'
         : adapterRegression ? 'AdapterRegression' : legacyDefeat ? 'LegacyDefeat'
         : settlementFreeze ? 'SettlementFreeze' : blockTarget ? 'BlockTarget'
         : mapRevisit ? 'MapRevisit' : preview ? 'TeamPreview' : 'Team';
-    const evidenceDir = centralConfig ? 'specs/003-central-config' : battleArt ? 'specs/002-battle-art' : 'specs/001-core-loop';
+    const evidenceDir = battleLayout ? 'specs/004-battle-layout' : centralConfig ? 'specs/003-central-config' : battleArt ? 'specs/002-battle-art' : 'specs/001-core-loop';
     const artChecks = [];
     const errors = [];
     const httpErrors = [];
@@ -62,7 +63,7 @@ async page => {
                 const loaded = await page.evaluate(async () => {
                     const cc = await System.import('cc');
                     const canvas = cc.director.getScene()?.getChildByName('Canvas');
-                    return canvas?.components.find(component => component.teamSelection)?.battleArt?.frames.size === 12;
+                    return canvas?.components.find(component => component.teamSelection)?.battleArt?.frames.size === 13;
                 });
                 if (loaded) break;
                 await page.waitForTimeout(250);
@@ -72,21 +73,53 @@ async page => {
                 const canvas = cc.director.getScene().getChildByName('Canvas');
                 const root = canvas.components.find(component => component.teamSelection);
                 const art = root.battleArt;
-                if (root.choosingTeam || root.session.snapshot.phase !== 'battle') return { count: art.frames.size, battle: false };
-                const s = root.session.snapshot;
-                const boss = s.map.nodes.some(node => node.kind === 'boss' && node.coord.q === s.map.position.q && node.coord.r === s.map.position.r);
                 const matches = (node, key, flip) => {
                     const sprite = node.getComponent(cc.Sprite);
                     return node.activeInHierarchy && sprite.spriteFrame === art.frames.get(key) && (node.scale.x < 0) === flip;
                 };
+                if (root.choosingTeam) return { count: art.frames.size, battle: false, team: true,
+                    roster: root.teamSelection.roster.map((hero, i) => {
+                        const panel = root.rosterCards[i];
+                        const image = panel.node.getChildByName('Portrait');
+                        const size = image.getComponent(cc.UITransform);
+                        const textSize = panel.label.node.getComponent(cc.UITransform);
+                        return { color: hero.color, matches: matches(image, `hero_${hero.color}`, root.configPackage.presentation[`hero_${hero.color}`].flip),
+                            height: size.height, expected: (root.configPackage.presentation[`hero_${hero.color}`].displayHeight ?? 245) * 0.65,
+                            separated: panel.label.node.position.y + textSize.height / 2 <= image.position.y - size.height / 2,
+                            info: panel.label.string.includes(`HP ${root.configPackage.content.game.startHp}`)
+                                && panel.label.string.includes(`起始牌 ${hero.startingDeck.length} 张`) };
+                    }) };
+                const s = root.session.snapshot;
+                if (s.phase === 'reward') return { count: art.frames.size, battle: false, reward: true,
+                    rewards: s.rewardCandidates.map((card, i) => {
+                        const panel = root.rewardCards[i];
+                        const node = panel.node.getChildByName('CardArt');
+                        const size = panel.node.getComponent(cc.UITransform);
+                        const badge = node.getChildByName('CostBadge_0');
+                        return { name: card.name, matches: matches(node.getChildByName('Frame'), 'card_frame', false)
+                            && matches(node.getChildByName('IllustrationWindow').getChildByName('Illustration'),
+                                card.effect.kind === 'attack' ? 'icon_attack' : 'icon_defend', false),
+                            title: node.getChildByName('CardTitle').getComponent(cc.Label).string === card.name,
+                            badge: matches(badge.getChildByName('Icon'), `energy_${card.color}`, false)
+                                && badge.getChildByName('CardCost').getComponent(cc.Label).string === String(card.cost),
+                            scale: node.scale.x, expectedScale: Math.min(size.width / 138, size.height / 190),
+                            fallbackHidden: !panel.label.node.active };
+                    }) };
+                if (s.phase !== 'battle') return { count: art.frames.size, battle: false };
+                const boss = s.map.nodes.some(node => node.kind === 'boss' && node.coord.q === s.map.position.q && node.coord.r === s.map.position.r);
                 const heroes = s.party.map((hero, i) => {
                     const panel = root.heroes[i];
                     const portrait = panel.node.getChildByName('Portrait');
-                    return matches(portrait, `hero_${hero.color}`, hero.color === 'blue')
+                    return matches(portrait, `hero_${hero.color}`, false)
                         && portrait.getComponent(cc.Sprite).color.a === (hero.alive ? 255 : 170)
-                        && panel.label.string.includes(hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡');
+                        && (panel.node.getChildByName('HealthBar')
+                            ? panel.node.getChildByName('HealthBar').getChildByName('Value').getComponent(cc.Label).string.includes(`HP ${hero.hp}/${hero.maxHp}`)
+                                && panel.node.getChildByName('ShieldBar').getChildByName('Value').getComponent(cc.Label).string === `护盾 ${hero.block}`
+                                && panel.node.getChildByName('HealthBar').getChildByName('Fill').scale.x === Math.max(0, Math.min(1, hero.hp / hero.maxHp))
+                                && panel.node.getChildByName('ShieldBar').getChildByName('Fill').scale.x === Math.max(0, Math.min(1, hero.block / hero.maxHp))
+                            : panel.label.string.includes(hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'));
                 });
-                const enemy = matches(root.enemy.node.getChildByName('Portrait'), boss ? 'enemy_boss' : 'enemy_normal', boss);
+                const enemy = matches(root.enemy.node.getChildByName('Portrait'), boss ? 'enemy_boss' : 'enemy_normal', true);
                 const cards = s.hand.map((card, i) => {
                     const node = root.handCards[i].node.getChildByName('CardArt');
                     const window = node.getChildByName('IllustrationWindow');
@@ -95,15 +128,95 @@ async page => {
                     return matches(image, card.def.effect.kind === 'attack' ? 'icon_attack' : 'icon_defend', false)
                         && matches(frame, 'card_frame', false) && window.getComponent(cc.Mask).type === cc.Mask.Type.GRAPHICS_RECT
                         && node.getChildByName('CardTitle').getComponent(cc.Label).string === card.def.name
-                        && node.getChildByName('CardCost').getComponent(cc.Label).string === String(card.def.cost);
+                        && Math.abs(node.getChildByName('CardTitle').position.y + 14) < 0.1
+                        && node.getChildByName('CostBadge_0').getChildByName('CardCost').getComponent(cc.Label).string === String(card.def.cost)
+                        && matches(node.getChildByName('CostBadge_0').getChildByName('Icon'), `energy_${card.def.color}`, false)
+                        && node.getChildByName('CostBadge_0').getChildByName('CardCost').position.x === 0
+                        && node.getChildByName('CostBadge_0').getChildByName('CardCost').position.y === 0
+                        && node.children.filter(child => child.name.startsWith('CostBadge_') && child.active).length === 1;
+                });
+                const targets = [root.enemy, ...root.heroes.filter(panel => panel.node.active)];
+                const labelsUnmirrored = targets.every(panel => panel.node.scale.x === 1 && panel.node.worldScale.x > 0
+                    && panel.label.node.worldScale.x > 0 && ['HealthBar', 'ShieldBar'].every(name => {
+                        const bar = panel.node.getChildByName(name);
+                        return !bar || bar.worldScale.x > 0 && bar.getChildByName('Value').worldScale.x > 0;
+                    }));
+                const targetSizes = targets.map(panel => {
+                    const index = root.heroes.indexOf(panel);
+                    const key = index < 0 ? boss ? 'enemy_boss' : 'enemy_normal' : `hero_${s.party[index].color}`;
+                    const image = panel.node.getChildByName('Portrait');
+                    const size = image.getComponent(cc.UITransform);
+                    const frame = image.getComponent(cc.Sprite).spriteFrame;
+                    const configured = root.configPackage.presentation[key].displayHeight;
+                    const expected = configured ?? Math.min((panel.node.getComponent(cc.UITransform).width - 12) / frame.rect.width,
+                        245 / frame.rect.height) * frame.rect.height;
+                    return { key, height: size.height, expected, width: size.width,
+                        aspectPreserved: Math.abs(size.width / size.height - frame.rect.width / frame.rect.height) < 0.0001,
+                        footY: panel.node.position.y + image.position.y - size.height / 2,
+                        labelGap: index < 0 ? null : panel.label.node.position.y - (image.position.y + size.height / 2) };
                 });
                 return { count: art.frames.size, battle: true, party: s.party.map(hero => hero.color), heroes, enemy, boss, cards,
+                    targetSizes,
+                    facing: { heroScaleX: s.party.map((hero, i) => root.heroes[i].node.getChildByName('Portrait').scale.x),
+                        enemyScaleX: root.enemy.node.getChildByName('Portrait').scale.x, labelsUnmirrored },
                     background: matches(root.battlePage.getChildByName('BattleBackground'), 'battle_bg', false),
-                    energy: root.battlePage.getChildByName('EnergyArt').activeInHierarchy };
+                    energy: root.battlePage.getChildByName('EnergyArt').activeInHierarchy
+                        && ['red', 'green', 'blue', 'white'].every((color, i) => matches(art.energyIcons[i].node, `energy_${color}`, false)
+                            && art.energyCounts[i].string === String(s.energy[color]))
+                        && art.energyNode.position.x < -350 && art.energyNode.position.y < -200
+                        && !root.energyLabel.node.active && root.energyLabel.string === '',
+                    noSelectionGuide: root.hintLabel.string === root.feedback && root.handCards.filter(panel => panel.node.active).every(panel =>
+                        !/左键选择|点击目标/.test(panel.label.string + panel.node.getChildByName('CardArt').getChildByName('CardStatus').getComponent(cc.Label).string)) };
             });
-            check(report.count === 12, 'Not all twelve battle art resources loaded');
+            check(report.count === 13, 'Not all thirteen battle art resources loaded');
+            if (report.team) check(report.roster.length === 3 && report.roster.every(hero => hero.matches && hero.info
+                && hero.separated && Math.abs(hero.height - hero.expected) < 0.1), 'Team portrait or information layout mismatch');
+            if (report.reward) check(report.rewards.length > 0 && report.rewards.every(card => card.matches && card.title && card.badge
+                && card.fallbackHidden && Math.abs(card.scale - card.expectedScale) < 0.01), 'Reward card art mismatch');
             if (report.battle) check(report.heroes.every(Boolean) && report.enemy && report.cards.every(Boolean)
-                && report.background && report.energy, `Battle art mismatch at ${name}`);
+                && report.background && report.energy && report.noSelectionGuide && report.facing.labelsUnmirrored
+                && report.targetSizes.every(size => Math.abs(size.height - size.expected) < 0.1 && size.aspectPreserved
+                    && Math.abs(size.footY + 45) < 0.1 && (size.labelGap === null || size.labelGap >= 19.9)),
+                `Battle art mismatch at ${name}`);
+            if (report.team || report.reward) {
+                report.selectionFallback = await page.evaluate(async () => {
+                    const cc = await System.import('cc');
+                    const root = cc.director.getScene().getChildByName('Canvas').components.find(component => component.teamSelection);
+                    const art = root.battleArt;
+                    const all = new Map(art.frames);
+                    const saved = localStorage.getItem('roguecard.save.v1');
+                    const state = root.choosingTeam ? null : JSON.stringify(root.session.snapshot);
+                    const refs = new Map(Array.from(all, ([key, frame]) => [key, frame.refCount]));
+                    const results = [];
+                    try {
+                        for (const mode of ['single', 'all']) {
+                            const team = root.choosingTeam;
+                            if (mode === 'all') art.frames.clear();
+                            else art.frames.delete(team ? 'hero_green' : 'card_frame');
+                            root.render();
+                            const panels = team ? root.rosterCards : root.rewardCards.filter(panel => panel.node.active);
+                            const fallback = panels.every((panel, i) => {
+                                const missing = !team || mode === 'all' || root.teamSelection.roster[i].color === 'green';
+                                const image = panel.node.getChildByName(team ? 'Portrait' : 'CardArt');
+                                return missing ? !image.active && panel.label.node.active && panel.label.string.includes(team ? 'HP ' : '能量')
+                                    && (!team || panel.label.node.position.y === 0) : image.active;
+                            });
+                            if (!fallback) throw new Error(`${team ? 'Team' : 'Reward'} ${mode} image fallback failed`);
+                            results.push({ mode, fallback: true });
+                            for (const [key, frame] of all) art.frames.set(key, frame);
+                            root.render();
+                        }
+                    } finally {
+                        for (const [key, frame] of all) art.frames.set(key, frame);
+                        root.render();
+                    }
+                    const unchanged = saved === localStorage.getItem('roguecard.save.v1')
+                        && state === (root.choosingTeam ? null : JSON.stringify(root.session.snapshot));
+                    const referencesBalanced = Array.from(all).every(([key, frame]) => frame.refCount === refs.get(key));
+                    if (!unchanged || !referencesBalanced) throw new Error('Selection art fallback changed save/state/references');
+                    return { results, unchanged, referencesBalanced };
+                });
+            }
             const after = await read();
             check(JSON.stringify(before.snapshot) === JSON.stringify(after.snapshot) && before.save === after.save,
                 'Loading or capturing art changed gameplay/save');
@@ -120,13 +233,24 @@ async page => {
             if (!node && allowInactive && previousPoint) return previousPoint;
             if (!node || (!allowInactive && !node.activeInHierarchy)) throw new Error(`Missing visible target ${path}`);
             const camera = canvas.getChildByName('Camera').getComponent(cc.Camera);
-            const screen = camera.worldToScreen(node.worldPosition);
+            const root = canvas.components.find(component => component.teamSelection);
+            const index = Number(node.name.replace('HandCard_', ''));
+            let world = node.worldPosition;
+            if (node.name.startsWith('HandCard_') && root.handSpacing !== undefined && index < root.session.snapshot.hand.length) {
+                world = root.battlePage.getComponent(cc.UITransform).convertToWorldSpaceAR(
+                    new cc.Vec3((index - (root.session.snapshot.hand.length - 1) / 2) * root.handSpacing - 50, -300, 0));
+            }
+            const screen = camera.worldToScreen(world);
             const element = document.querySelector('canvas');
             const rect = element.getBoundingClientRect();
             return { x: rect.x + screen.x / element.width * rect.width,
                 y: rect.y + (element.height - screen.y) / element.height * rect.height };
         }, { path, allowInactive, previousPoint: clickPoints.get(path) ?? null });
         clickPoints.set(path, point);
+        if (path.includes('/HandCard_')) {
+            await page.mouse.move(point.x, point.y);
+            await page.waitForTimeout(160);
+        }
         await page.mouse.click(point.x, point.y, { button });
         await page.waitForTimeout(100);
         const view = await read();
@@ -216,7 +340,7 @@ async page => {
                 const root = cc.director.getScene().getChildByName('Canvas').components.find(component => component.teamSelection);
                 const { content, presentation } = root.configPackage;
                 const labels = root.rosterCards.map(panel => panel.label.string);
-                return { ready: content.characters.length === 3 && Object.keys(presentation).length === 12,
+                return { ready: content.characters.length === 3 && Object.keys(presentation).length === 13,
                     displayed: content.characters.every((hero, i) => labels[i].includes(`HP ${content.game.startHp}`)
                         && labels[i].includes(`能量 ${content.game.energyPerTurn} / 回合`)
                         && labels[i].includes(`起始牌 ${hero.startingDeck.length} 张`)
@@ -224,7 +348,8 @@ async page => {
                     game: content.game, characters: content.characters };
             });
             check(report.ready && report.displayed, 'Team display differs from validated JSON');
-            await page.screenshot({ path: `${evidenceDir}/${prefix}-Team.png`, fullPage: true });
+            if (battleLayout) await capture('Team');
+            else await page.screenshot({ path: `${evidenceDir}/${prefix}-Team.png`, fullPage: true });
         }
         return team;
     };
@@ -682,7 +807,8 @@ async page => {
     await page.waitForTimeout(200);
     check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
     check(httpErrors.length === 0, `HTTP errors: ${httpErrors.join('; ')}`);
-    return { result: centralConfig ? preview ? '003 CONFIG PREVIEW PASS' : '003 CONFIG WEB PASS'
+    return { result: battleLayout ? preview ? '004 LAYOUT PREVIEW PASS' : '004 LAYOUT WEB PASS'
+        : centralConfig ? preview ? '003 CONFIG PREVIEW PASS' : '003 CONFIG WEB PASS'
         : battleArt ? preview ? '002 BATTLE ART PREVIEW PASS' : '002 BATTLE ART WEB PASS'
         : preview ? 'T112 PREVIEW PASS' : 'AC-15~24 WEB PASS', source: preview ? 'editor-preview' : 'web-build',
         url, floorCount, errors, httpErrors, contextPrevented, finalRevision, finalPartyHp, mouseActions: trace.length,

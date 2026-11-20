@@ -41,10 +41,10 @@ test('003: real five JSON files preserve golden defaults and original ordered du
     const ordered = select(configDocuments(), ['hero-blue', 'hero-red', 'hero-green']).createConfig();
     assert.deepEqual(ordered.startingParty?.map(hero => hero.id), ['hero-blue', 'hero-red', 'hero-green']);
     assert.deepEqual(ordered.startingDeck, ['b-atk', 'b-atk', 'b-def', 'r-atk', 'r-atk', 'r-def', 'g-atk', 'g-atk', 'g-def']);
-    assert.equal(Object.keys(presentation).length, 12);
+    assert.equal(Object.keys(presentation).length, 13);
     for (const [key, entry] of Object.entries(presentation)) {
         assert.equal(entry.path, `${key}/spriteFrame`);
-        assert.equal(entry.flip, key === 'hero_blue' || key === 'enemy_boss');
+        assert.equal(entry.flip, key === 'enemy_normal' || key === 'enemy_boss');
     }
 });
 
@@ -124,6 +124,45 @@ test('003: presentation is complete, typed and uses relative SpriteFrame paths',
     assert.throws(() => parsePresentation({ ...raw, hero_blue: { path: '../hero_blue.png', flip: true } }), /path/);
     const parsed = parsePresentation({ ...raw, hero_blue: { path: 'other/portrait/spriteFrame', flip: false } });
     assert.deepEqual(parsed.hero_blue, { path: 'other/portrait/spriteFrame', flip: false });
+});
+
+test('004: white energy art is required and validates its configured path and flip', () => {
+    const raw = configObject(configDocuments().presentation, 'presentation');
+    const missing = { ...raw }; delete missing.energy_white;
+    assert.throws(() => parsePresentation(missing), /presentation.energy_white/);
+    assert.throws(() => parsePresentation({ ...raw, energy_white: { path: '../energy_white.png', flip: false } }), /presentation.energy_white.path/);
+    assert.throws(() => parsePresentation({ ...raw, energy_white: { path: 'energy_white/spriteFrame', flip: 0 } }), /presentation.energy_white.flip/);
+    assert.deepEqual(parsePresentation(raw).energy_white, { path: 'energy_white/spriteFrame', flip: false });
+});
+
+test('004: target heights are independently configured with the knight taller', () => {
+    const presentation = parsePresentation(configDocuments().presentation);
+    assert.equal(presentation.hero_green.displayHeight, 270);
+    assert.equal(presentation.hero_red.displayHeight, 245);
+    assert.equal(presentation.hero_blue.displayHeight, 245);
+    assert.equal(presentation.enemy_normal.displayHeight, 199);
+    assert.equal(presentation.enemy_boss.displayHeight, 229);
+});
+
+test('004: display height rejects nonpositive, nonfinite and nonnumeric values', () => {
+    const raw = configObject(configDocuments().presentation, 'presentation');
+    for (const name of ['hero_red', 'hero_green', 'hero_blue', 'enemy_normal', 'enemy_boss'] as const) {
+        const entry = configObject(raw[name], name);
+        for (const height of [0, -1, NaN, Infinity, -Infinity, null, '270', true, {}, []]) {
+            assert.throws(() => parsePresentation({ ...raw, [name]: { ...entry, displayHeight: height } }),
+                new RegExp(`presentation.${name}.displayHeight`));
+        }
+    }
+});
+
+test('004: missing heights preserve legacy entries, custom height accepts decimals', () => {
+    const raw = configObject(configDocuments().presentation, 'presentation');
+    const legacy = { path: 'hero_green/spriteFrame', flip: false };
+    assert.deepEqual(parsePresentation({ ...raw, hero_green: legacy }).hero_green, legacy);
+    const custom = parsePresentation({ ...raw, hero_green: { ...legacy, displayHeight: 285.5 } });
+    assert.equal(custom.hero_green.displayHeight, 285.5);
+    assert.equal(custom.hero_red.displayHeight, 245);
+    assert.equal(custom.enemy_normal.displayHeight, 199);
 });
 
 test('003: configuration failure and selection never write saved state, changed config does not replace old run or RNG', () => {

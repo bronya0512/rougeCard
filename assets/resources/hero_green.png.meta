@@ -40,15 +40,16 @@
       "name": "spriteFrame",
       "userData": {
         "trimThreshold": 1,
+        "trimType": "none",
         "rotated": false,
-        "offsetX": 4,
-        "offsetY": -4.5,
-        "trimX": 27,
-        "trimY": 16,
-        "width": 978,
-        "height": 1001,
-        "rawWidth": 1024,
-        "rawHeight": 1024,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 699,
+        "height": 868,
+        "rawWidth": 699,
+        "rawHeight": 868,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +61,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -489,
-            -500.5,
+            -349.5,
+            -434,
             0,
-            489,
-            -500.5,
+            349.5,
+            -434,
             0,
-            -489,
-            500.5,
+            -349.5,
+            434,
             0,
-            489,
-            500.5,
+            349.5,
+            434,
             0
           ],
           "indexes": [
@@ -82,40 +83,39 @@
             3
           ],
           "uv": [
-            27,
-            1008,
-            1005,
-            1008,
-            27,
-            7,
-            1005,
-            7
+            0,
+            868,
+            699,
+            868,
+            0,
+            0,
+            699,
+            0
           ],
           "nuv": [
-            0.0263671875,
-            0.0068359375,
-            0.9814453125,
-            0.0068359375,
-            0.0263671875,
-            0.984375,
-            0.9814453125,
-            0.984375
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            1
           ],
           "minPos": [
-            -489,
-            -500.5,
+            -349.5,
+            -434,
             0
           ],
           "maxPos": [
-            489,
-            500.5,
+            349.5,
+            434,
             0
           ]
         },
         "isUuid": true,
         "imageUuidOrDatabaseUri": "230baf5d-3674-4420-97de-ad508d899608@6c48a",
-        "atlasUuid": "",
-        "trimType": "auto"
+        "atlasUuid": ""
       },
       "ver": "1.0.12",
       "imported": true,

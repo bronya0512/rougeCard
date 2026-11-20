@@ -1,0 +1,153 @@
+{
+  "mode": "art-only",
+  "images": [
+    {
+      "name": "hero_red",
+      "beforeSize": [
+        896,
+        896
+      ],
+      "normalizedSize": [
+        546,
+        869
+      ],
+      "cropBounds": [
+        183,
+        9,
+        715,
+        878
+      ],
+      "paddingLeft": 14,
+      "paddingRight": 0,
+      "contactX": 273,
+      "contactY": 869,
+      "horizontalErrorPixels": 0.0,
+      "bottomAlphaBounds": 869,
+      "visiblePixelsPreserved": true,
+      "uuidPreservedBeforeImport": true,
+      "noNewShadowBaked": true,
+      "nearTransparentPixelsRemoved": 35221,
+      "importFullRect": true,
+      "uuidPreservedAfterImport": true
+    },
+    {
+      "name": "hero_green",
+      "beforeSize": [
+        896,
+        896
+      ],
+      "normalizedSize": [
+        699,
+        868
+      ],
+      "cropBounds": [
+        96,
+        15,
+        649,
+        883
+      ],
+      "paddingLeft": 0,
+      "paddingRight": 146,
+      "contactX": 349.5,
+      "contactY": 868,
+      "horizontalErrorPixels": 0.0,
+      "bottomAlphaBounds": 868,
+      "visiblePixelsPreserved": true,
+      "uuidPreservedBeforeImport": true,
+      "noNewShadowBaked": true,
+      "nearTransparentPixelsRemoved": 17556,
+      "importFullRect": true,
+      "uuidPreservedAfterImport": true
+    },
+    {
+      "name": "hero_blue",
+      "beforeSize": [
+        896,
+        896
+      ],
+      "normalizedSize": [
+        488,
+        857
+      ],
+      "cropBounds": [
+        210,
+        10,
+        683,
+        867
+      ],
+      "paddingLeft": 15,
+      "paddingRight": 0,
+      "contactX": 244,
+      "contactY": 857,
+      "horizontalErrorPixels": 0.0,
+      "bottomAlphaBounds": 857,
+      "visiblePixelsPreserved": true,
+      "uuidPreservedBeforeImport": true,
+      "noNewShadowBaked": true,
+      "nearTransparentPixelsRemoved": 34187,
+      "importFullRect": true,
+      "uuidPreservedAfterImport": true
+    },
+    {
+      "name": "enemy_normal",
+      "beforeSize": [
+        896,
+        896
+      ],
+      "normalizedSize": [
+        582,
+        487
+      ],
+      "cropBounds": [
+        146,
+        334,
+        728,
+        821
+      ],
+      "paddingLeft": 0,
+      "paddingRight": 0,
+      "contactX": 291,
+      "contactY": 487,
+      "horizontalErrorPixels": 0.0,
+      "bottomAlphaBounds": 487,
+      "visiblePixelsPreserved": true,
+      "uuidPreservedBeforeImport": true,
+      "noNewShadowBaked": true,
+      "nearTransparentPixelsRemoved": 6102,
+      "importFullRect": true,
+      "uuidPreservedAfterImport": true
+    },
+    {
+      "name": "enemy_boss",
+      "beforeSize": [
+        1600,
+        896
+      ],
+      "normalizedSize": [
+        854,
+        821
+      ],
+      "cropBounds": [
+        370,
+        37,
+        1212,
+        858
+      ],
+      "paddingLeft": 12,
+      "paddingRight": 0,
+      "contactX": 427,
+      "contactY": 821,
+      "horizontalErrorPixels": 0.0,
+      "bottomAlphaBounds": 821,
+      "visiblePixelsPreserved": true,
+      "uuidPreservedBeforeImport": true,
+      "noNewShadowBaked": true,
+      "nearTransparentPixelsRemoved": 22222,
+      "importFullRect": true,
+      "uuidPreservedAfterImport": true
+    }
+  ],
+  "codeAndPresentationUnchanged": true,
+  "backup": "art-archive/004-battle-layout/2026-11-20-before-grounding",
+  "groundModuleAndTestsRemoved": true
+}

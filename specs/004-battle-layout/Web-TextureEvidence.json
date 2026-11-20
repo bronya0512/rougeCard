@@ -1,0 +1,58 @@
+[
+  {
+    "name": "hero_red",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\b9\\b987f273-0946-4760-abc8-b61a33b3ca1d.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": true
+  },
+  {
+    "name": "hero_green",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\23\\230baf5d-3674-4420-97de-ad508d899608.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": true
+  },
+  {
+    "name": "hero_blue",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\9b\\9be04d68-dd1a-40a2-8c15-39a270e8dbf7.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": true
+  },
+  {
+    "name": "enemy_normal",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\88\\889dffd5-c9bc-486b-82ab-73a2630a4c6c.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": true
+  },
+  {
+    "name": "enemy_boss",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\b4\\b4549f0f-036e-4197-8680-3e27c9749df2.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": true
+  },
+  {
+    "name": "card_frame",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\33\\33b3e8ec-c45a-46e1-a736-4228cbec0750.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": false
+  },
+  {
+    "name": "battle_bg",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\c8\\c8e8d474-df9d-45d7-9e2a-e40e6cfcaf0e.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": false
+  },
+  {
+    "name": "energy_white",
+    "builtFileMatchesSource": true,
+    "nativePath": "build\\web-desktop\\assets\\resources\\native\\ab\\abb5c7e6-c4c8-4171-b440-702886a0d697.png",
+    "spriteFrameUUIDPreserved": true,
+    "fullCanvas": false
+  }
+]

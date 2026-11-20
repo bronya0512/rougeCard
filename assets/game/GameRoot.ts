@@ -1,11 +1,12 @@
 import {
     _decorator, Canvas, Color, Component, EventKeyboard, EventMouse, Graphics,
-    input, Input, KeyCode, Label, Layers, Node, UITransform, Vec3,
+    input, Input, KeyCode, Label, Layers, Node, tween, Tween, UITransform, Vec3,
 } from 'cc';
 import { hexDistance } from '../core';
 import type { CardDef, GameInput, HexCoord, MapNode, SaveData, Snapshot, StoragePort } from '../core';
 import { BattleArtView } from './BattleArtView';
 import { BattleSelection } from './BattleSelection';
+import { BattleStatusView } from './BattleStatusView';
 import type { BattleTarget } from './BattleSelection';
 import { GameSession } from './GameSession';
 import { ConfigLoader } from './ConfigLoader';
@@ -69,6 +70,10 @@ export class GameRoot extends Component {
     private feedback = '';
     private readonly hexSize = 58;
     private battleArt!: BattleArtView;
+    private readonly statusViews = new Map<Node, BattleStatusView>();
+    private hoveredUid: string | null = null;
+    private handSignature = '';
+    private handSpacing = 96;
 
     onLoad(): void {
         this.buildUi();
@@ -92,6 +97,10 @@ export class GameRoot extends Component {
     start(): void {
         input.on(Input.EventType.MOUSE_UP, this.onMouse, this);
         input.on(Input.EventType.KEY_DOWN, this.onKey, this);
+        input.on(Input.EventType.MOUSE_MOVE, this.onMouseMove, this);
+        this.battlePage.on(Node.EventType.MOUSE_UP, this.onMouse, this);
+        this.battlePage.on(Node.EventType.MOUSE_MOVE, this.onMouseMove, this);
+        this.battlePage.on(Node.EventType.MOUSE_LEAVE, this.onMouseLeave, this);
     }
 
     onDestroy(): void {
@@ -99,6 +108,12 @@ export class GameRoot extends Component {
         this.configLoader.destroy();
         input.off(Input.EventType.MOUSE_UP, this.onMouse, this);
         input.off(Input.EventType.KEY_DOWN, this.onKey, this);
+        input.off(Input.EventType.MOUSE_MOVE, this.onMouseMove, this);
+        this.battlePage.off(Node.EventType.MOUSE_UP, this.onMouse, this);
+        this.battlePage.off(Node.EventType.MOUSE_MOVE, this.onMouseMove, this);
+        this.battlePage.off(Node.EventType.MOUSE_LEAVE, this.onMouseLeave, this);
+        this.clearHandHover();
+        this.statusViews.clear();
         this.selection.cancel();
         this.battleArt.destroy();
         for (const node of [this.teamPage, this.mapPage, this.battlePage, this.rewardPage, this.settlementPage,
@@ -204,25 +219,28 @@ export class GameRoot extends Component {
         this.teamPage = this.createNode('TeamPage', this.node, 0, 0, 1280, 720);
         this.label('TeamTitle', this.teamPage, 0, 245, 1100, 48, '选择 2～3 名角色 · 组成你的队伍', 28);
         for (let i = 0; i < 3; i += 1) {
-            this.rosterCards.push(this.panel(`Roster_${i}`, this.teamPage, (i - 1) * 300, 40, 260, 290, '', 22));
+            this.rosterCards.push(this.panel(`Roster_${i}`, this.teamPage, (i - 1) * 300, 40, 260, 380, '', 14));
         }
-        this.teamSummary = this.label('TeamSummary', this.teamPage, 0, -165, 1160, 75, '', 22);
+        this.teamSummary = this.label('TeamSummary', this.teamPage, 0, -190, 1160, 60, '', 20);
         this.confirmTeam = this.panel('ConfirmTeam', this.teamPage, 190, -255, 320, 56, '确认队伍 · 进入地图', 22);
         this.continueRun = this.panel('ContinueRun', this.teamPage, -190, -255, 320, 56, '继续游戏', 22);
         this.mapBoard = this.createNode('MapBoard', this.mapPage, -190, 0, 660, 550);
         this.label('Legend', this.mapPage, -190, 260, 660, 36, '金色 · 当前位置    蓝色 · 战斗    绿色 · 休息    红色 · BOSS', 17);
         this.mapInfo = this.panel('NodeInfo', this.mapPage, 410, 60, 320, 340, '', 21);
         this.mapParty = this.panel('PartySummary', this.mapPage, 410, -215, 320, 170, '', 19);
-        this.label('SideEnemy', this.battlePage, -390, 258, 300, 40, '敌 方', 24);
-        this.label('SideParty', this.battlePage, 375, 258, 420, 40, '我 方', 24);
-        this.enemy = this.panel('EnemyTarget', this.battlePage, -390, 100, 250, 235, '', 24);
+        this.label('SideEnemy', this.battlePage, -430, 252, 180, 36, '敌 方', 22);
+        this.label('SideParty', this.battlePage, 490, 252, 160, 36, '我 方', 22);
+        this.enemy = this.panel('EnemyTarget', this.battlePage, -430, 40, 250, 320, '', 18);
+        this.statusViews.set(this.enemy.node, new BattleStatusView(this.enemy.node, 180));
         for (let i = 0; i < 3; i += 1) {
-            this.heroes.push(this.panel(`HeroTarget_${i}`, this.battlePage, 150 + i * 185, 100, 175, 235, '', 20));
+            const hero = this.panel(`HeroTarget_${i}`, this.battlePage, 150 + i * 185, 40, 175, 320, '', 18);
+            this.heroes.push(hero);
+            this.statusViews.set(hero.node, new BattleStatusView(hero.node, 150));
         }
-        this.energyLabel = this.label('Energy', this.battlePage, 0, -45, 1160, 36, '', 19);
-        this.handLabel = this.label('Hand', this.battlePage, -400, -80, 310, 26, '', 15);
-        this.endTurn = this.panel('EndTurn', this.battlePage, 515, -320, 180, 46, '结束回合', 19);
-        this.cancelButton = this.panel('CancelCard', this.battlePage, 80, -80, 180, 34, '取消选牌', 16);
+        this.energyLabel = this.label('Energy', this.battlePage, -495, -278, 240, 112, '', 19);
+        this.handLabel = this.label('Hand', this.battlePage, -430, -175, 270, 26, '', 15);
+        this.endTurn = this.panel('EndTurn', this.battlePage, 515, -310, 180, 46, '结束回合', 19);
+        this.cancelButton = this.panel('CancelCard', this.battlePage, 515, -245, 180, 34, '取消选牌', 16);
         this.label('RewardTitle', this.rewardPage, 0, 180, 900, 60, '战斗胜利 · 选择一张卡牌加入牌组', 30);
         for (let i = 0; i < 3; i += 1) {
             this.rewardCards.push(this.panel(`RewardCard_${i}`, this.rewardPage, (i - 1) * 290, -25, 245, 300, '', 23));
@@ -323,6 +341,13 @@ export class GameRoot extends Component {
                 return `${card.name} ×${count}\n${effect} · 费用${card.cost}`;
             }).join('\n');
             panel.label.string = `${this.colorName(hero.color)}色角色\nHP ${content.game.startHp} · 能量 ${content.game.energyPerTurn} / 回合\n起始牌 ${hero.startingDeck.length} 张\n${deck}\n${index >= 0 ? `已选 · 站位 ${index + 1}` : '左键加入队伍'}`;
+            const art = this.battleArt.target(panel.node, `hero_${hero.color}`, true, {
+                height: (this.configPackage?.presentation[`hero_${hero.color}`].displayHeight ?? 245) * 0.65,
+                groundY: -10,
+            });
+            panel.label.node.setPosition(0, art ? -90 : 0);
+            panel.label.lineHeight = 17;
+            panel.label.node.getComponent(UITransform)!.setContentSize(236, art ? 140 : 362);
             this.paint(panel, C.panel, index >= 0 ? C.gold : this.colorTint(hero.color), index >= 0);
         }
         const names = ids.map(id => this.colorName(roster.find(hero => hero.id === id)!.color));
@@ -343,6 +368,9 @@ export class GameRoot extends Component {
     private render(): void {
         this.teamPage.active = this.choosingTeam;
         if (this.choosingTeam) {
+            this.hintLabel.node.setPosition(-100, -320);
+            this.hintLabel.node.getComponent(UITransform)!.setContentSize(980, 40);
+            this.clearHandHover();
             for (const page of [this.mapPage, this.battlePage, this.rewardPage, this.settlementPage]) page.active = false;
             this.renderTeam();
             return;
@@ -355,6 +383,7 @@ export class GameRoot extends Component {
             this.lastFloor = s.floor;
         }
         if (s.phase !== this.lastPhase) {
+            this.clearHandHover();
             this.selection.cancel();
             this.infoCoord = null;
             this.lastPhase = s.phase;
@@ -375,18 +404,20 @@ export class GameRoot extends Component {
             panel.node.active = card !== undefined;
             if (card !== undefined) {
                 panel.label.string = this.cardText(card) + '\n\n左键选择';
-                this.paint(panel, C.panel, card.color === 'red' ? C.red : C.blue);
+                const art = this.battleArt.card(panel.node, card, false, true, this.colorTint(card.color));
+                panel.label.node.active = !art;
+                this.paint(panel, art ? new Color(28, 39, 55, 0) : C.panel, this.colorTint(card.color));
             }
         }
         if (this.settlementPage.active) {
             this.settlementLabel.string = s.phase === 'victory' ? `VICTORY\n击败最终 BOSS，完成 ${s.floorCount} 层！` : 'DEFEAT\n全队阵亡，下次再战。';
             this.settlementLabel.color = s.phase === 'victory' ? C.gold : C.red;
         }
-        const selected = s.hand.find(card => card.uid === this.selection.selectedUid);
         const help = s.phase === 'map' ? '左键节点 · 查看信息    右键节点 · 移动'
-            : s.phase === 'battle' ? selected === undefined ? '左键选择卡牌，再点击目标施放'
-                : selected.def.effect.kind === 'attack' ? '已选攻击牌 · 左键点击左侧怪物' : '已选防御牌 · 左键点击右侧队友'
+            : s.phase === 'battle' ? ''
             : s.phase === 'reward' ? '左键选择一张奖励，返回地图' : '点击「重新开始」开启新的一局';
+        this.hintLabel.node.setPosition(s.phase === 'battle' ? -455 : -100, s.phase === 'battle' ? -207 : -320);
+        this.hintLabel.node.getComponent(UITransform)!.setContentSize(s.phase === 'battle' ? 300 : 980, 40);
         this.hintLabel.string = this.feedback || help;
     }
 
@@ -395,13 +426,12 @@ export class GameRoot extends Component {
         if (s.enemy !== null) {
             const boss = s.map.nodes.some(node => node.kind === 'boss' && hexDistance(node.coord, s.map.position) === 0);
             const art = this.battleArt.target(this.enemy.node, boss ? 'enemy_boss' : 'enemy_normal');
-            this.enemy.label.node.setPosition(0, art ? -82 : 0);
-            this.enemy.label.node.getComponent(UITransform)!.setContentSize(226, art ? 64 : 217);
-            this.enemy.label.string = art
-                ? `${boss ? '魔王' : '怪物'} · HP ${s.enemy.hp}/${s.enemy.maxHp}\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`
-                : `${boss ? 'BOSS' : '怪物'}\n\nHP ${s.enemy.hp}/${s.enemy.maxHp}\n\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`;
-            this.paint(this.enemy, new Color(52, 34, 43, art ? 130 : 255), selected?.def.effect.kind === 'attack' ? C.gold : C.red,
-                selected?.def.effect.kind === 'attack');
+            this.statusViews.get(this.enemy.node)!.render(s.enemy.hp, s.enemy.maxHp, null);
+            this.enemy.label.node.setPosition(0, art ? -143 : 20);
+            this.enemy.label.node.getComponent(UITransform)!.setContentSize(226, art ? 44 : 200);
+            this.enemy.label.string = art ? `${boss ? '魔王' : '怪物'} · 意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`
+                : `${boss ? 'BOSS' : '怪物'}\n\n意图：攻击 ${s.enemy.intent.kind === 'attack' ? s.enemy.intent.damage : 0}`;
+            this.paintTarget(this.enemy, art, C.red, selected?.def.effect.kind === 'attack');
         }
         for (let i = 0; i < this.heroes.length; i += 1) {
             const hero = s.party[i];
@@ -409,47 +439,146 @@ export class GameRoot extends Component {
             panel.node.active = hero !== undefined;
             if (hero === undefined) continue;
             const color = this.colorTint(hero.color);
-            panel.node.setPosition(s.party.length === 2 ? 255 + i * 230 : 150 + i * 185, 100);
+            panel.node.setPosition(s.party.length === 2 ? 255 + i * 230 : 150 + i * 185, 40);
             const target = hero.alive && selected?.def.effect.kind === 'defend';
             const art = this.battleArt.target(panel.node, `hero_${hero.color}`, hero.alive);
-            panel.label.node.setPosition(0, art ? -82 : 0);
-            panel.label.node.getComponent(UITransform)!.setContentSize(151, art ? 64 : 217);
-            panel.label.string = art
-                ? `${this.colorName(hero.color)} · ${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}${hero.alive ? '' : ' · 停止产能'}`
-                : `${this.colorName(hero.color)}色角色\n\n${hero.alive ? `HP ${hero.hp}/${hero.maxHp}` : '已阵亡'}\n格挡 ${hero.block}\n\n${hero.alive ? '点击可作为防御目标' : '不再产出能量'}`;
-            this.paint(panel, art ? new Color(28, 39, 55, hero.alive ? 100 : 190) : hero.alive ? C.panel : C.muted,
-                target ? C.gold : color, target);
+            this.statusViews.get(panel.node)!.render(hero.hp, hero.maxHp, hero.block, hero.alive);
+            panel.label.node.setPosition(0, art ? this.battleArt.targetHeight(panel.node) - 65 : 20);
+            panel.label.node.getComponent(UITransform)!.setContentSize(151, art ? 26 : 200);
+            panel.label.string = art ? `${this.colorName(hero.color)}${hero.alive ? '' : ' · 已阵亡'}`
+                : `${this.colorName(hero.color)}色角色\n\n${hero.alive ? '点击可作为防御目标' : '已阵亡 · 不再产出能量'}`;
+            this.paintTarget(panel, art, color, target);
         }
         const e = s.energy;
         const energyArt = this.battleArt.energy(e);
-        this.energyLabel.node.setPosition(energyArt ? 270 : 0, -45);
-        this.energyLabel.node.getComponent(UITransform)!.setContentSize(energyArt ? 540 : 1160, 36);
-        this.energyLabel.string = energyArt ? `白 ${e.white}   ·   选牌后点击怪物 / 队友`
-            : `可用能量   红 ${e.red}   绿 ${e.green}   蓝 ${e.blue}   白 ${e.white}     ·     选牌后点击怪物 / 队友`;
+        this.energyLabel.node.setPosition(-495, -278);
+        this.energyLabel.node.getComponent(UITransform)!.setContentSize(240, 112);
+        this.energyLabel.node.active = !energyArt;
+        this.energyLabel.string = energyArt ? '' : `可用能量\n红 ${e.red}    绿 ${e.green}\n蓝 ${e.blue}    白 ${e.white}`;
         this.handLabel.string = `手牌 ${s.hand.length}   抽牌 ${s.drawCount}   弃牌 ${s.discardCount}`;
         while (this.handCards.length < s.hand.length) {
-            this.handCards.push(this.panel(`HandCard_${this.handCards.length}`, this.battlePage, 0, -198, 176, 190, '', 18));
+            this.handCards.push(this.panel(`HandCard_${this.handCards.length}`, this.battlePage, 0, -253, 138, 190, '', 15));
         }
-        const spacing = Math.min(205, 1060 / Math.max(s.hand.length, 1));
+        const signature = s.hand.map(card => card.uid).join('|');
+        if (signature !== this.handSignature) {
+            this.clearHandHover();
+            this.handSignature = signature;
+        }
+        this.handSpacing = Math.min(96, 750 / Math.max(s.hand.length - 1, 1));
         for (let i = 0; i < this.handCards.length; i += 1) {
             const panel = this.handCards[i]!;
             const card = s.hand[i];
             panel.node.active = card !== undefined;
             if (card === undefined) continue;
             const chosen = this.selection.selectedUid === card.uid;
-            panel.node.setPosition((i - (s.hand.length - 1) / 2) * spacing, chosen ? -188 : -198);
-            panel.label.string = this.cardText(card.def) + `\n\n${chosen ? '已选择 · 点击目标' : card.playable ? '左键选择' : '能量不足'}`;
+            Tween.stopAllByTarget(panel.node);
+            panel.node.setPosition((i - (s.hand.length - 1) / 2) * this.handSpacing, this.hoveredUid === card.uid ? -215 : chosen ? -245 : -253);
+            panel.node.setScale(this.hoveredUid === card.uid ? 1.25 : 1, this.hoveredUid === card.uid ? 1.25 : 1, 1);
+            panel.node.setSiblingIndex(this.battlePage.children.length - 1);
+            panel.label.string = this.cardText(card.def) + `\n\n${chosen ? '已选择' : card.playable ? '' : '能量不足'}`;
             panel.label.color = card.playable ? C.text : C.dim;
             const art = this.battleArt.card(panel.node, card.def, chosen, card.playable, this.colorTint(card.def.color));
             panel.label.node.active = !art;
             this.paint(panel, art ? new Color(28, 39, 55, 0) : card.playable ? C.panel : C.muted, chosen ? C.gold
                 : card.playable ? this.colorTint(card.def.color) : C.line, chosen);
         }
+        const hoverIndex = s.hand.findIndex(card => card.uid === this.hoveredUid);
+        if (hoverIndex >= 0) this.handCards[hoverIndex]!.node.setSiblingIndex(this.battlePage.children.length - 1);
         this.cancelButton.node.active = this.selection.selectedUid !== null;
         this.paint(this.endTurn, new Color(45, 71, 62), C.green);
     }
 
+    private paintTarget(panel: Panel, art: boolean, tint: Color, selected: boolean): void {
+        if (!art) { this.paint(panel, C.panel, selected ? C.gold : tint, selected); return; }
+        const g = panel.graphics;
+        g.clear();
+        g.fillColor = new Color(0, 0, 0, 75);
+        g.ellipse(0, -85, panel.node.getComponent(UITransform)!.width * 0.3, 10);
+        g.fill();
+        if (selected) {
+            g.strokeColor = C.gold;
+            g.lineWidth = 3;
+            g.ellipse(0, -85, panel.node.getComponent(UITransform)!.width * 0.34, 13);
+            g.stroke();
+        }
+    }
+
+    private clearHandHover(): void {
+        this.hoveredUid = null;
+        this.handSignature = '';
+        for (const panel of this.handCards) {
+            Tween.stopAllByTarget(panel.node);
+            panel.node.setScale(1, 1, 1);
+        }
+    }
+
+    onDisable(): void {
+        this.clearHandHover();
+    }
+
+    private onMouseLeave(): void {
+        if (!this.disposed) this.setHandHover(null);
+    }
+
+    private setHandHover(uid: string | null): void {
+        if (uid === this.hoveredUid || this.session === undefined || this.choosingTeam) return;
+        this.hoveredUid = uid;
+        const hand = this.session.snapshot.hand;
+        for (let i = 0; i < hand.length; i += 1) {
+            const panel = this.handCards[i]!;
+            const hovered = hand[i]!.uid === uid;
+            const y = hovered ? -215 : hand[i]!.uid === this.selection.selectedUid ? -245 : -253;
+            Tween.stopAllByTarget(panel.node);
+            panel.node.setSiblingIndex(this.battlePage.children.length - 1);
+            tween(panel.node).to(0.12, { position: new Vec3((i - (hand.length - 1) / 2) * this.handSpacing, y, 0),
+                scale: new Vec3(hovered ? 1.25 : 1, hovered ? 1.25 : 1, 1) }, { easing: 'quadOut' }).start();
+        }
+        const index = hand.findIndex(card => card.uid === uid);
+        if (index >= 0) this.handCards[index]!.node.setSiblingIndex(this.battlePage.children.length - 1);
+    }
+
+    private mousePoint(event: EventMouse): Vec3 | null {
+        const camera = this.node.getComponent(Canvas)?.cameraComponent;
+        if (camera === null || camera === undefined) return null;
+        const location = event.getLocation();
+        const point = camera.screenToWorld(new Vec3(location.x, location.y, 0));
+        point.z = 0;
+        return point;
+    }
+
+    private baseHandHit(point: Vec3): number {
+        const hand = this.session.snapshot.hand;
+        const local = this.battlePage.getComponent(UITransform)!.convertToNodeSpaceAR(point);
+        if (local.y < -348 || local.y > -158) return -1;
+        for (let i = hand.length - 1; i >= 0; i -= 1) {
+            const x = (i - (hand.length - 1) / 2) * this.handSpacing;
+            if (Math.abs(local.x - x) <= 69) return i;
+        }
+        return -1;
+    }
+
+    private handHit(point: Vec3): number {
+        const hand = this.session.snapshot.hand;
+        const hover = hand.findIndex(card => card.uid === this.hoveredUid);
+        if (hover >= 0 && this.hit(this.handCards[hover]!.node, point)) return hover;
+        for (let i = hand.length - 1; i >= 0; i -= 1) {
+            if (this.hit(this.handCards[i]!.node, point)) return i;
+        }
+        return -1;
+    }
+
+    private onMouseMove(event: EventMouse): void {
+        if (!this.enabledInHierarchy || this.disposed) return;
+        if (this.choosingTeam || this.session === undefined || this.session.snapshot.phase !== 'battle') return;
+        const point = this.mousePoint(event);
+        if (point === null) return;
+        const base = this.baseHandHit(point);
+        const index = base >= 0 ? base : this.handHit(point);
+        this.setHandHover(index < 0 ? null : this.session.snapshot.hand[index]!.uid);
+    }
+
     private dispatch(value: GameInput): void {
+        this.clearHandHover();
         const result = this.session.dispatch(value);
         this.feedback = result.lastRejection === null ? '' : value.type === 'move'
             ? '无法移动：请选择相邻的地图节点' : '操作未生效：检查费用、目标或当前阶段';
@@ -504,11 +633,8 @@ export class GameRoot extends Component {
 
     private onMouse(event: EventMouse): void {
         if (!this.enabledInHierarchy) return;
-        const location = event.getLocation();
-        const camera = this.node.getComponent(Canvas)?.cameraComponent;
-        if (camera === null || camera === undefined) return;
-        const point = camera.screenToWorld(new Vec3(location.x, location.y, 0));
-        point.z = 0;
+        const point = this.mousePoint(event);
+        if (point === null) return;
         if (this.choosingTeam) {
             if (event.getButton() !== EventMouse.BUTTON_LEFT) return;
             for (let i = 0; i < this.rosterCards.length; i += 1) {
@@ -540,9 +666,8 @@ export class GameRoot extends Component {
             if (this.hit(this.cancelButton.node, point)) {
                 this.selection.cancel(); this.feedback = ''; this.render(); return;
             }
-            for (let i = 0; i < s.hand.length; i += 1) {
-                if (this.hit(this.handCards[i]!.node, point)) { this.selectCard(i); return; }
-            }
+            const cardIndex = this.handHit(point);
+            if (cardIndex >= 0) { this.selectCard(cardIndex); return; }
             if (this.hit(this.enemy.node, point) && s.enemy !== null) {
                 this.target({ kind: 'enemy', id: s.enemy.id }); return;
             }
